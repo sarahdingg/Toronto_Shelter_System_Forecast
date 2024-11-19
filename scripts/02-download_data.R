@@ -5,6 +5,7 @@
 # Contact: sarah.ding@mail.utoronto.ca
 # License: UofT
 # Pre-requisites: installation of tidyverse
+# Any other information needed?: N/A
 
 
 #### Workspace setup ####

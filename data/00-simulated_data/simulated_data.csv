@@ -1,152 +1,181 @@
-division,state,party
-Division 1,Victoria,Liberal
-Division 2,New South Wales,Liberal
-Division 3,Tasmania,Liberal
-Division 4,New South Wales,Liberal
-Division 5,Queensland,Liberal
-Division 6,New South Wales,Labor
-Division 7,Victoria,Liberal
-Division 8,Western Australia,Labor
-Division 9,Western Australia,Greens
-Division 10,Queensland,Labor
-Division 11,Queensland,Labor
-Division 12,Northern Territory,Liberal
-Division 13,New South Wales,Labor
-Division 14,Western Australia,Labor
-Division 15,Western Australia,National
-Division 16,Victoria,Liberal
-Division 17,South Australia,Liberal
-Division 18,Victoria,Liberal
-Division 19,Western Australia,Labor
-Division 20,South Australia,Labor
-Division 21,New South Wales,Liberal
-Division 22,Queensland,Greens
-Division 23,New South Wales,Liberal
-Division 24,New South Wales,Liberal
-Division 25,Queensland,Labor
-Division 26,Victoria,National
-Division 27,New South Wales,Liberal
-Division 28,Queensland,Liberal
-Division 29,Tasmania,Liberal
-Division 30,South Australia,Liberal
-Division 31,New South Wales,Liberal
-Division 32,Victoria,Labor
-Division 33,Tasmania,Liberal
-Division 34,New South Wales,Liberal
-Division 35,Western Australia,Labor
-Division 36,New South Wales,Liberal
-Division 37,Tasmania,Greens
-Division 38,Tasmania,Labor
-Division 39,Victoria,Greens
-Division 40,South Australia,Labor
-Division 41,New South Wales,Other
-Division 42,New South Wales,Other
-Division 43,Tasmania,Labor
-Division 44,Tasmania,National
-Division 45,Queensland,Liberal
-Division 46,Australian Capital Territory,Other
-Division 47,Queensland,Labor
-Division 48,Queensland,Other
-Division 49,South Australia,Liberal
-Division 50,Victoria,National
-Division 51,South Australia,Liberal
-Division 52,Victoria,Labor
-Division 53,South Australia,National
-Division 54,Queensland,Liberal
-Division 55,Queensland,Labor
-Division 56,South Australia,Liberal
-Division 57,New South Wales,Other
-Division 58,Northern Territory,Liberal
-Division 59,New South Wales,Labor
-Division 60,Western Australia,Labor
-Division 61,New South Wales,Liberal
-Division 62,South Australia,Liberal
-Division 63,Queensland,Labor
-Division 64,Tasmania,Labor
-Division 65,South Australia,Labor
-Division 66,Victoria,Labor
-Division 67,Queensland,Liberal
-Division 68,Queensland,Liberal
-Division 69,Tasmania,Labor
-Division 70,South Australia,National
-Division 71,Australian Capital Territory,Labor
-Division 72,Western Australia,Labor
-Division 73,Queensland,National
-Division 74,Victoria,Labor
-Division 75,Western Australia,Labor
-Division 76,Tasmania,Labor
-Division 77,Queensland,Liberal
-Division 78,Western Australia,Liberal
-Division 79,Queensland,Labor
-Division 80,Queensland,Liberal
-Division 81,Victoria,Labor
-Division 82,New South Wales,Liberal
-Division 83,Victoria,Liberal
-Division 84,Queensland,National
-Division 85,Western Australia,Liberal
-Division 86,New South Wales,Labor
-Division 87,Queensland,Liberal
-Division 88,New South Wales,Liberal
-Division 89,Tasmania,Liberal
-Division 90,South Australia,Labor
-Division 91,Victoria,Liberal
-Division 92,New South Wales,Labor
-Division 93,Tasmania,Labor
-Division 94,South Australia,Labor
-Division 95,Victoria,Liberal
-Division 96,Victoria,Labor
-Division 97,Western Australia,Liberal
-Division 98,Queensland,Liberal
-Division 99,South Australia,Liberal
-Division 100,New South Wales,Labor
-Division 101,South Australia,Labor
-Division 102,New South Wales,Labor
-Division 103,Victoria,Labor
-Division 104,Victoria,Labor
-Division 105,South Australia,Other
-Division 106,Western Australia,Labor
-Division 107,Tasmania,Liberal
-Division 108,Victoria,Labor
-Division 109,Queensland,Liberal
-Division 110,Victoria,Labor
-Division 111,Australian Capital Territory,Labor
-Division 112,Victoria,Liberal
-Division 113,Victoria,Liberal
-Division 114,Victoria,Liberal
-Division 115,Tasmania,Labor
-Division 116,Victoria,Labor
-Division 117,New South Wales,Labor
-Division 118,Victoria,Labor
-Division 119,Victoria,Greens
-Division 120,Northern Territory,Labor
-Division 121,South Australia,Liberal
-Division 122,New South Wales,Liberal
-Division 123,New South Wales,Labor
-Division 124,New South Wales,Liberal
-Division 125,New South Wales,National
-Division 126,New South Wales,Labor
-Division 127,Queensland,Labor
-Division 128,New South Wales,Other
-Division 129,Queensland,Labor
-Division 130,Australian Capital Territory,Liberal
-Division 131,Tasmania,Greens
-Division 132,New South Wales,National
-Division 133,New South Wales,Labor
-Division 134,Northern Territory,Labor
-Division 135,South Australia,National
-Division 136,Victoria,Labor
-Division 137,Tasmania,National
-Division 138,South Australia,Liberal
-Division 139,New South Wales,Labor
-Division 140,Victoria,Other
-Division 141,Queensland,Greens
-Division 142,Victoria,National
-Division 143,Western Australia,Labor
-Division 144,Victoria,Labor
-Division 145,Queensland,Liberal
-Division 146,Tasmania,Liberal
-Division 147,South Australia,Liberal
-Division 148,Victoria,Labor
-Division 149,New South Wales,National
-Division 150,New South Wales,Labor
-Division 151,Victoria,Liberal
+date,population_group,ageunder16,age16-24,age25-34,age35-44,age45-54,age55-64,age65over,entered_shelter,left_shelter,returned_to_shelter,moved_to_permanent_housing
+2020-01-01,single adult,50,156,194,266,320,162,81,469,95,104,188
+2020-02-01,single adult,98,300,159,238,305,265,51,301,76,85,150
+2020-03-01,single adult,70,204,319,360,299,154,66,270,98,135,138
+2020-04-01,single adult,33,200,173,365,373,205,98,246,185,96,183
+2020-05-01,single adult,86,122,241,227,388,226,121,499,274,52,186
+2020-06-01,single adult,61,113,295,286,324,241,100,338,391,57,68
+2020-07-01,single adult,69,209,208,380,309,221,67,266,147,83,178
+2020-08-01,single adult,62,233,286,301,334,275,75,195,126,45,146
+2020-09-01,single adult,33,190,202,337,323,224,79,339,260,56,33
+2020-10-01,single adult,44,228,288,308,370,236,132,405,144,51,39
+2020-11-01,single adult,88,205,257,301,363,243,118,231,69,142,64
+2020-12-01,single adult,76,212,157,240,444,197,142,278,206,64,144
+2021-01-01,single adult,28,285,263,335,348,164,142,262,233,59,144
+2021-02-01,single adult,91,180,154,328,347,214,95,389,295,116,196
+2021-03-01,single adult,45,128,178,279,307,159,61,176,186,55,59
+2021-04-01,single adult,26,125,199,317,417,235,105,409,257,69,50
+2021-05-01,single adult,61,126,219,393,262,191,50,329,262,87,67
+2021-06-01,single adult,28,106,223,277,257,249,97,422,274,59,154
+2021-07-01,single adult,55,287,175,339,251,174,143,444,304,47,159
+2021-08-01,single adult,97,253,222,271,372,243,101,312,98,104,75
+2021-09-01,single adult,100,140,160,326,255,186,56,408,91,73,65
+2021-10-01,single adult,62,233,268,240,336,277,118,232,188,74,39
+2021-11-01,single adult,95,258,155,207,266,176,59,360,114,140,66
+2021-12-01,single adult,34,192,333,384,409,184,85,449,252,65,128
+2022-01-01,single adult,51,244,245,400,448,236,57,170,162,114,164
+2022-02-01,single adult,26,291,304,251,326,225,98,465,367,31,40
+2022-03-01,single adult,28,264,268,266,321,184,144,244,291,30,147
+2022-04-01,single adult,60,156,345,367,351,220,118,355,272,49,159
+2022-05-01,single adult,93,247,237,201,266,259,88,197,63,36,134
+2022-06-01,single adult,42,262,305,264,320,183,71,116,281,93,42
+2022-07-01,single adult,46,260,216,400,304,274,125,288,393,73,189
+2022-08-01,single adult,79,165,259,334,373,196,59,366,86,89,168
+2022-09-01,single adult,72,103,317,228,268,278,111,369,142,121,116
+2022-10-01,single adult,26,173,283,219,264,159,142,459,187,111,69
+2022-11-01,single adult,72,232,185,323,423,188,143,260,98,143,197
+2022-12-01,single adult,46,216,204,279,391,257,114,261,101,139,152
+2023-01-01,single adult,57,124,272,206,404,283,96,237,199,67,35
+2023-02-01,single adult,53,235,269,244,282,252,63,325,221,92,34
+2023-03-01,single adult,88,154,243,275,299,229,120,480,304,26,186
+2023-04-01,single adult,91,184,197,224,267,239,112,137,316,101,130
+2023-05-01,single adult,95,144,159,290,397,293,83,304,323,107,39
+2023-06-01,single adult,82,245,302,340,340,151,123,367,176,91,159
+2023-07-01,single adult,32,269,315,337,291,227,128,390,189,79,128
+2023-08-01,single adult,44,258,249,293,323,179,68,203,248,35,138
+2023-09-01,single adult,57,233,254,326,302,219,131,286,223,143,147
+2023-10-01,single adult,40,298,174,368,312,264,71,132,387,66,172
+2023-11-01,single adult,98,288,281,211,322,197,67,337,240,80,90
+2023-12-01,single adult,60,204,329,207,408,287,100,217,354,81,44
+2024-01-01,single adult,66,275,171,270,332,177,116,366,375,88,192
+2024-02-01,single adult,79,244,266,214,304,216,101,427,79,42,79
+2024-03-01,single adult,35,272,173,282,363,278,112,180,247,86,103
+2024-04-01,single adult,25,290,316,376,267,193,86,359,341,89,165
+2024-05-01,single adult,91,152,196,366,357,264,67,175,230,30,165
+2024-06-01,single adult,58,203,337,286,293,290,90,402,206,91,134
+2024-07-01,single adult,50,152,340,321,341,263,114,283,342,90,161
+2024-08-01,single adult,100,162,186,362,270,228,88,113,238,98,145
+2024-09-01,single adult,69,298,323,333,278,226,64,150,231,118,44
+2024-10-01,single adult,53,192,203,270,369,243,98,254,232,26,110
+2024-11-01,single adult,23,244,196,203,413,268,119,174,95,32,191
+2024-12-01,single adult,32,101,293,280,333,295,146,335,100,103,184
+2020-01-01,family,88,276,168,375,272,257,89,374,81,122,42
+2020-02-01,family,44,229,349,207,291,252,123,376,211,92,165
+2020-03-01,family,71,240,308,380,446,175,109,148,256,53,54
+2020-04-01,family,41,123,271,266,443,185,83,361,315,132,157
+2020-05-01,family,51,276,186,307,331,205,139,424,374,95,147
+2020-06-01,family,44,294,252,327,311,206,67,340,310,93,55
+2020-07-01,family,54,229,197,380,313,152,118,315,232,35,169
+2020-08-01,family,59,264,337,213,326,160,109,353,290,117,74
+2020-09-01,family,49,290,339,355,356,200,84,243,171,93,173
+2020-10-01,family,31,175,286,333,428,165,119,462,163,52,167
+2020-11-01,family,50,220,288,336,395,260,142,328,179,116,34
+2020-12-01,family,49,112,192,360,259,160,103,433,304,107,35
+2021-01-01,family,83,269,264,315,450,245,92,226,367,139,178
+2021-02-01,family,33,288,307,245,348,250,122,289,188,35,110
+2021-03-01,family,90,297,338,263,332,299,71,168,369,23,55
+2021-04-01,family,86,205,204,218,449,294,69,219,150,117,130
+2021-05-01,family,42,265,338,297,251,282,96,129,130,111,136
+2021-06-01,family,98,211,311,328,373,264,143,417,287,90,124
+2021-07-01,family,56,163,206,379,420,228,90,215,148,76,105
+2021-08-01,family,27,179,275,267,374,245,63,167,234,141,72
+2021-09-01,family,70,135,187,289,361,211,78,167,399,42,53
+2021-10-01,family,93,134,233,321,254,240,60,195,336,132,94
+2021-11-01,family,69,186,212,274,349,299,109,191,100,149,192
+2021-12-01,family,93,166,323,332,404,238,69,279,275,65,91
+2022-01-01,family,95,147,227,218,400,292,130,169,66,108,103
+2022-02-01,family,65,293,219,234,380,272,137,397,164,108,185
+2022-03-01,family,36,210,295,360,392,184,100,375,378,36,81
+2022-04-01,family,81,122,279,396,352,179,138,350,367,41,180
+2022-05-01,family,65,294,269,260,307,218,62,174,171,105,44
+2022-06-01,family,73,236,349,350,384,279,125,395,236,44,196
+2022-07-01,family,54,160,224,368,283,172,55,328,235,79,84
+2022-08-01,family,98,138,170,390,280,170,116,323,135,141,115
+2022-09-01,family,43,130,334,248,267,168,141,157,81,121,150
+2022-10-01,family,26,172,348,284,295,286,93,182,151,34,173
+2022-11-01,family,98,135,236,268,258,253,60,398,153,55,124
+2022-12-01,family,42,121,221,263,328,181,68,356,173,44,49
+2023-01-01,family,45,221,208,275,394,197,60,261,178,24,102
+2023-02-01,family,51,271,314,201,384,164,112,175,120,100,185
+2023-03-01,family,26,140,230,317,385,297,149,497,396,149,32
+2023-04-01,family,46,191,204,217,314,184,71,166,120,70,144
+2023-05-01,family,61,192,283,203,258,204,60,403,85,120,74
+2023-06-01,family,24,224,317,305,348,274,76,119,374,107,90
+2023-07-01,family,89,142,155,310,274,166,51,355,124,94,89
+2023-08-01,family,35,138,277,286,379,220,55,189,332,34,34
+2023-09-01,family,43,264,260,317,388,226,149,231,91,106,41
+2023-10-01,family,51,206,305,271,445,162,104,103,124,30,162
+2023-11-01,family,40,132,181,392,289,217,97,317,82,67,117
+2023-12-01,family,74,182,198,319,397,276,77,316,155,44,91
+2024-01-01,family,94,239,233,210,388,174,78,352,81,47,97
+2024-02-01,family,55,197,342,278,267,178,117,180,298,31,153
+2024-03-01,family,58,120,346,384,431,165,90,312,392,27,127
+2024-04-01,family,73,175,196,255,391,158,54,135,134,74,125
+2024-05-01,family,28,193,297,305,444,186,144,244,349,111,112
+2024-06-01,family,90,134,279,214,341,203,58,348,239,128,168
+2024-07-01,family,67,129,339,379,316,173,132,158,145,67,68
+2024-08-01,family,96,277,261,307,359,163,77,168,89,149,58
+2024-09-01,family,75,274,340,388,342,258,64,320,128,96,34
+2024-10-01,family,58,217,339,288,376,265,109,236,273,121,198
+2024-11-01,family,87,166,268,235,288,260,124,386,248,102,55
+2024-12-01,family,20,214,264,330,400,189,142,297,319,50,57
+2020-01-01,refugee,59,220,159,206,328,268,66,396,353,127,76
+2020-02-01,refugee,49,181,264,267,337,221,110,134,138,52,99
+2020-03-01,refugee,35,195,208,319,417,163,90,172,308,91,99
+2020-04-01,refugee,73,201,198,252,410,214,74,404,328,111,148
+2020-05-01,refugee,94,269,284,300,414,300,125,350,124,75,33
+2020-06-01,refugee,67,267,210,223,437,175,68,181,366,59,51
+2020-07-01,refugee,39,269,315,267,278,195,101,500,172,82,108
+2020-08-01,refugee,86,195,257,266,370,172,120,432,400,127,35
+2020-09-01,refugee,55,125,185,210,447,298,60,463,367,91,152
+2020-10-01,refugee,71,240,266,273,402,230,64,274,244,29,86
+2020-11-01,refugee,41,247,172,292,291,188,122,192,304,34,96
+2020-12-01,refugee,68,247,264,332,403,220,137,333,237,61,154
+2021-01-01,refugee,61,193,311,287,293,194,132,408,396,123,103
+2021-02-01,refugee,78,268,237,359,257,196,60,371,98,111,130
+2021-03-01,refugee,30,235,281,288,393,225,82,242,394,59,131
+2021-04-01,refugee,74,266,331,210,288,245,122,446,333,149,121
+2021-05-01,refugee,27,180,306,273,345,209,72,249,254,129,94
+2021-06-01,refugee,65,290,335,387,314,232,66,235,349,94,192
+2021-07-01,refugee,85,181,333,230,343,238,59,420,282,149,69
+2021-08-01,refugee,96,205,328,273,307,294,121,313,356,147,31
+2021-09-01,refugee,65,218,327,372,433,286,67,297,80,140,48
+2021-10-01,refugee,89,110,197,258,420,258,73,360,279,60,119
+2021-11-01,refugee,91,212,280,223,444,275,138,108,382,24,62
+2021-12-01,refugee,63,207,182,234,305,259,99,386,124,141,116
+2022-01-01,refugee,51,229,311,209,271,300,120,166,234,25,160
+2022-02-01,refugee,55,246,215,263,394,182,61,131,95,133,194
+2022-03-01,refugee,64,240,213,271,348,229,129,408,356,46,90
+2022-04-01,refugee,33,130,317,371,391,209,52,122,109,117,88
+2022-05-01,refugee,35,257,335,241,368,221,80,181,367,149,93
+2022-06-01,refugee,52,214,169,359,313,282,148,413,360,99,42
+2022-07-01,refugee,59,121,227,366,273,212,70,214,163,80,102
+2022-08-01,refugee,59,193,302,334,257,241,111,380,327,142,46
+2022-09-01,refugee,29,115,348,365,397,186,83,393,294,136,142
+2022-10-01,refugee,91,296,317,216,369,232,77,129,61,150,124
+2022-11-01,refugee,28,263,338,327,323,293,85,265,93,53,37
+2022-12-01,refugee,26,277,244,360,335,155,75,231,366,62,194
+2023-01-01,refugee,26,260,299,308,427,238,50,308,269,78,41
+2023-02-01,refugee,77,255,272,329,266,244,139,471,226,49,113
+2023-03-01,refugee,80,276,235,278,386,195,70,169,221,76,34
+2023-04-01,refugee,93,111,333,310,412,238,91,253,371,83,86
+2023-05-01,refugee,43,280,310,265,440,157,134,138,214,110,79
+2023-06-01,refugee,82,255,257,269,434,268,84,451,324,130,192
+2023-07-01,refugee,73,165,341,309,393,173,143,225,126,63,162
+2023-08-01,refugee,42,149,330,258,301,154,61,330,152,136,137
+2023-09-01,refugee,45,274,308,374,348,291,146,430,143,77,66
+2023-10-01,refugee,52,278,195,208,284,250,62,248,105,59,183
+2023-11-01,refugee,76,216,349,222,431,248,99,452,193,81,89
+2023-12-01,refugee,48,233,173,224,275,153,113,214,157,123,140
+2024-01-01,refugee,29,227,209,342,262,184,82,427,151,41,60
+2024-02-01,refugee,72,221,307,311,285,159,73,116,105,109,147
+2024-03-01,refugee,73,242,300,399,424,161,58,479,75,55,81
+2024-04-01,refugee,96,246,166,292,402,277,80,449,222,34,166
+2024-05-01,refugee,30,158,336,220,277,152,145,433,343,91,38
+2024-06-01,refugee,44,102,334,318,406,175,115,234,59,76,46
+2024-07-01,refugee,71,196,320,247,293,194,80,294,59,105,134
+2024-08-01,refugee,45,132,172,400,303,157,109,315,87,126,135
+2024-09-01,refugee,26,147,194,304,402,294,140,306,268,91,181
+2024-10-01,refugee,44,174,285,370,278,282,148,379,356,22,130
+2024-11-01,refugee,51,199,228,383,397,232,146,186,264,83,92
+2024-12-01,refugee,43,207,313,203,342,251,72,476,359,38,125

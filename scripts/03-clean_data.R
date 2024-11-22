@@ -1,44 +1,73 @@
 #### Preamble ####
-# Purpose: Cleans the raw plane data recorded by two observers..... [...UPDATE THIS...]
-# Author: Rohan Alexander [...UPDATE THIS...]
-# Date: 6 April 2023 [...UPDATE THIS...]
-# Contact: rohan.alexander@utoronto.ca [...UPDATE THIS...]
-# License: MIT
-# Pre-requisites: [...UPDATE THIS...]
-# Any other information needed? [...UPDATE THIS...]
+# Purpose: Clean raw_data.csv by splitting youth population group from all other groups
+# Author: Sarah Ding
+# Date: 22 November 2024
+# Contact: sarah.ding@mail.utoronto.ca
+# License: UofT
+# Pre-requisites: downloaded data is saved to raw_data.csv
+# Any other information needed? N/A
 
 #### Workspace setup ####
-library(tidyverse)
+library(dplyr)
+library(lubridate)
+library(readr)
 
-#### Clean data ####
-raw_data <- read_csv("inputs/data/plane_data.csv")
 
-cleaned_data <-
-  raw_data |>
-  janitor::clean_names() |>
-  select(wing_width_mm, wing_length_mm, flying_time_sec_first_timer) |>
-  filter(wing_width_mm != "caw") |>
+# Step 1: Read in the dataset
+raw_data <- read_csv("data/01-raw_data/raw_data.csv")
+
+# Step 2: Convert the date column to a proper datetime format
+cleaned_data <- raw_data %>%
+  mutate(date = as.Date(paste0("01-", `date(mmm-yy)`), format = "%d-%b-%y"))
+
+# Step 3: Filter for the Chronic group
+chronic_data <- cleaned_data %>%
+  filter(population_group == "Chronic")
+
+# Step 4: Clean and convert the population_group_percentage column
+chronic_data <- chronic_data %>%
   mutate(
-    flying_time_sec_first_timer = if_else(flying_time_sec_first_timer == "1,35",
-                                   "1.35",
-                                   flying_time_sec_first_timer)
-  ) |>
-  mutate(wing_width_mm = if_else(wing_width_mm == "490",
-                                 "49",
-                                 wing_width_mm)) |>
-  mutate(wing_width_mm = if_else(wing_width_mm == "6",
-                                 "60",
-                                 wing_width_mm)) |>
+    population_group_percentage = as.numeric(gsub("%", "", population_group_percentage))
+  )
+
+# Step 5: Add interaction terms for all age groups (including under 16) and time trends
+chronic_data <- chronic_data %>%
   mutate(
-    wing_width_mm = as.numeric(wing_width_mm),
-    wing_length_mm = as.numeric(wing_length_mm),
-    flying_time_sec_first_timer = as.numeric(flying_time_sec_first_timer)
-  ) |>
-  rename(flying_time = flying_time_sec_first_timer,
-         width = wing_width_mm,
-         length = wing_length_mm
-         ) |> 
-  tidyr::drop_na()
+    interaction_age_under16_time = ageunder16 * as.numeric(date),
+    interaction_age16_24_time = `age16-24` * as.numeric(date),
+    interaction_age25_34_time = `age25-34` * as.numeric(date),
+    interaction_age35_44_time = `age35-44` * as.numeric(date),
+    interaction_age45_54_time = `age45-54` * as.numeric(date),
+    interaction_age55_64_time = `age55-64` * as.numeric(date),
+    interaction_age65over_time = age65over * as.numeric(date)
+  )
+
+
+# Step 6: Select relevant columns for modeling
+analysis_data <- chronic_data %>%
+  select(
+    date,
+    returned_to_shelter,
+    moved_to_housing,
+    actively_homeless,
+    newly_identified,
+    ageunder16, `age16-24`, `age25-34`, `age35-44`, `age45-54`, `age55-64`, age65over,
+    interaction_age_under16_time, interaction_age16_24_time, interaction_age25_34_time,
+    interaction_age35_44_time, interaction_age45_54_time, interaction_age55_64_time,
+    interaction_age65over_time,
+    population_group_percentage
+  )
+
+# Step 7: Check for missing data and handle appropriately
+missing_summary <- analysis_data %>% summarise_all(~ sum(is.na(.)))
+print(missing_summary)
 
 #### Save data ####
-write_csv(cleaned_data, "outputs/data/analysis_data.csv")
+write_csv(analysis_data, "data/02-analysis_data/analysis_data.csv")
+
+# Display a glimpse of the cleaned dataset
+glimpse(analysis_data)
+
+
+
+

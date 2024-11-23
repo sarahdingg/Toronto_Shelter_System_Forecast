@@ -1,14 +1,16 @@
 #### Preamble ####
-# Purpose: Clean raw_data.csv by splitting youth population group from all other groups
+# Purpose: Clean raw_data.csv by splitting `Chronic` population group from all other groups
 # Author: Sarah Ding
 # Date: 22 November 2024
 # Contact: sarah.ding@mail.utoronto.ca
 # License: UofT
-# Pre-requisites: downloaded data is saved to raw_data.csv
+# Pre-requisites: 
+  # -downloaded data is saved to raw_data.csv and have been run
+  # -packages `tidyverse`,`lubridate`, `readr` must be installed and loaded
 # Any other information needed? N/A
 
 #### Workspace setup ####
-library(dplyr)
+library(tidyverse)
 library(lubridate)
 library(readr)
 
@@ -47,6 +49,7 @@ chronic_data <- chronic_data %>%
 analysis_data <- chronic_data %>%
   select(
     date,
+    population_group,
     returned_to_shelter,
     moved_to_housing,
     actively_homeless,

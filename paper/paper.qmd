@@ -1,10 +1,9 @@
 ---
-title: "My title"
+title: "Forecasting the Toronto Shelter System Performance on Reducing Chronic Homelessness "
 subtitle: "My subtitle if needed"
 author: 
-  - First author
-  - Another author
-thanks: "Code and data are available at: [https://github.com/RohanAlexander/starter_folder](https://github.com/RohanAlexander/starter_folder)."
+  - Sarah Ding
+thanks: "Code and data are available at: [https://github.com/sarahdingg/Toronto_Shelter_System_Forecast)."
 date: today
 date-format: long
 abstract: "First sentence. Second sentence. Third sentence. Fourth sentence."
@@ -19,7 +18,9 @@ bibliography: references.bib
 #| message: false
 
 library(tidyverse)
-library(palmerpenguins)
+
+# Load cleaned data
+analysis_data <- read_csv("data/02-analysis_data/analysis_data.csv")
 ```
 
 
@@ -43,6 +44,7 @@ Telegraphing paragraph: The remainder of this paper is structured as follows. @s
 # Data {#sec-data}
 
 ## Overview
+The dataset used for the current analysis is obtained from Open Data Toronto [@opendatatoronto], it is last refreshed on November 15, 2024. Open Data Toronto is an open source accessible to the public, 
 
 We use the statistical programming language R [@citeR].... Our data [@shelter].... Following @tellingstories, we consider...
 
@@ -52,31 +54,45 @@ Overview text
 	
 Some paragraphs about how we go from a phenomena in the world to an entry in the dataset.
 
+
+## Variables {#sec-variables}
+The collected data from Open Data Toronto [@opendatatoronto] contains several key variables relevant to the analysis:
+
+- **'date'**: The time period (month/year) for which the data is being published (format: mmm-yy)
+- **'population_group'**: Represents different groups: all population, chronic, refugees, families, youth, single adult and non-refugees
+- **'returned_to_shelter'**: People who were previously using the shelter system, then did not use the system for 3 months or longer, and have now returned. Some other communities may call this indicator “Returned from Inactive”
+- **'newly_identified'**: People who entered the shelter system for the first time
+- **'moved_to_housing'**: People who were using the shelter system and have moved to permanent housing.
+- **'actively_homeless'**: People who have used the shelter system at least one time in the past three months and did not move to permanent housing.
+- **'age'**: People's age recorded in the Shelter Management Information System, with ranges of under 16, 16-24, 25-34, 35-44, 45-54, 55-64, and over 65. 
+- **'population_group_percentage'**: Represents the percentage of each population group (chronic, refugees, families, youth, single adult and non-refugees). The proportion is calculated from all the population.
+
+For the purpose of the current analysis, only the chronic population group is included out of all population groups - for more details on the data cleaning process, refer to [Appendix - @sec-data-cleaning]
+
 ## Outcome variables
 
-Add graphs, tables and text. Use sub-sub-headings for each outcome variable or update the subheading to be singular.
-
-
-
-Some of our data is of penguins (@fig-bills), from @palmerpenguins.
+As the focus is to analyze and predict the performance of Toronto's shelter system in reducing homelessness, the primary outcome variable of interest is the number of individuals who have successfully transitioned to permanent housing, denoted as **‘moved_to_housing’**. The **`moved_to_housing`** variable captures the count of people who exited the shelter system and moved into stable, permanent housing arrangements. This variable serves as a direct measure of the shelter system's success in achieving its goal of reducing homelessness to rare, brief, and non-recurring instances. By examining and modeling the **`moved_to_housing`** variable, we can explore effectiveness of the shelter system and identify trends and predictors that influence successful housing transitions.
 
 ```{r}
-#| label: fig-bills
+#| label: fig-outcome-var
 #| fig-cap: Bills of penguins
 #| echo: false
+#| 
+# Add a year column to the dataset
+analysis_data <- analysis_data %>%
+  mutate(year = format(date, "%Y"))
 
-ggplot(penguins, aes(x = island, fill = species)) +
-  geom_bar(alpha = 0.8) +
-  scale_fill_manual(values = c("darkorange","purple","cyan4"),
-                    guide = "none") +
-  theme_minimal() +
-  facet_wrap(~species, ncol = 1) +
-  coord_flip()
+# Group by year and calculate the average of moved_to_housing
+summary_table <- analysis_data %>%
+  group_by(year) %>%
+  summarise(average_moved_to_housing = mean(moved_to_housing, na.rm = TRUE))
+
+# Display the summary table
+knitr::kable(summary_table, caption = "Average Moved to Housing by Year")
 ```
 
-Talk more about it.
 
-And also planes (@fig-planes). (You can change the height and width, but don't worry about doing that until you have finished every other aspect of the paper - Quarto will try to make it look nice and the defaults usually work well once you have enough text.)
+@fig-outcome-var presents 
 
 ```{r}
 #| label: fig-planes
@@ -110,7 +126,7 @@ Use sub-sub-headings for each outcome variable and feel free to combine a few in
 
 
 
-# Model
+# Model {#sec-model}
 
 The goal of our modelling strategy is twofold. Firstly,...
 
@@ -139,7 +155,7 @@ We expect a positive relationship between the size of the wings and time spent a
 We can use maths by including latex between dollar signs, for instance $\theta$.
 
 
-# Results
+# Results {#sec-results}
 
 Our results are summarized in @tbl-modelresults.
 
@@ -174,13 +190,13 @@ modelsummary::modelsummary(
 
 
 
-# Discussion
+# Discussion {#sec-discussion}
 
 ## First discussion point {#sec-first-point}
 
 If my paper were 10 pages, then should be be at least 2.5 pages. The discussion is a chance to show off what you know and what you learnt from all this. 
 
-## Second discussion point
+## What did we learn about the world? talk about differences before pandemic and after
 
 Please don't use these as sub-heading labels - change them to be what your point actually is.
 
@@ -194,10 +210,15 @@ Weaknesses and next steps should also be included.
 
 \appendix
 
-# Appendix {-}
+# Appendix 1 {#sec-appendix1}
 
 
-# Additional data details
+# Additional data details {#sec-additional-data-details}
+how data is cleaned for analysis data and model data, why lagged variables are constructed for time-series analysis and regression models
+
+## Data Cleaning {#sec-data-cleaning}
+
+## Limitations and Improvements
 
 # Model details {#sec-model-details}
 
@@ -249,6 +270,7 @@ plot(first_model, "trace")
 plot(first_model, "rhat")
 ```
 
+# Apendix 2 {#sec-appendix2}
 
 
 \newpage

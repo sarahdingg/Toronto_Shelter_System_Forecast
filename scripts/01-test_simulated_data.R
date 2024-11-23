@@ -1,89 +1,86 @@
 #### Preamble ####
-# Purpose: Tests the structure and validity of the simulated Australian 
-  #electoral divisions dataset.
-# Author: Rohan Alexander
-# Date: 26 September 2024
-# Contact: rohan.alexander@utoronto.ca
-# License: MIT
+# Purpose: Tests the structure and validity of the simulated Toronto Shelter System Flow dataset.
+# Author: Sarah Ding
+# Date: 23 November 2024
+# Contact: sarah.ding@mail.utoronto.ca
+# License: UofT
 # Pre-requisites: 
   # - The `tidyverse` package must be installed and loaded
   # - 00-simulate_data.R must have been run
-# Any other information needed? Make sure you are in the `starter_folder` rproj
+# Any other information needed? Make sure you are in the `Toronto_Shelter_System_Forecast` rproj
 
 
 #### Workspace setup ####
 library(tidyverse)
 
-analysis_data <- read_csv("data/00-simulated_data/simulated_data.csv")
+simulated_data <- read_csv("data/00-simulated_data/simulated_data.csv")
 
-# Test if the data was successfully loaded
-if (exists("analysis_data")) {
-  message("Test Passed: The dataset was successfully loaded.")
+# Test 1: Check that all expected columns exist
+expected_columns <- c(
+  "date", "population_group", "entered_shelter", "left_shelter",
+  "returned_to_shelter", "moved_to_permanent_housing", "ageunder16",
+  "age16-24", "age25-34", "age35-44", "age45-54", "age55-64", "age65over"
+)
+if (all(expected_columns %in% colnames(simulated_data))) {
+  print("Test 1 Passed: All expected columns exist.")
 } else {
-  stop("Test Failed: The dataset could not be loaded.")
+  print("Test 1 Failed: Some expected columns are missing.")
 }
 
-
-#### Test data ####
-
-# Check if the dataset has 151 rows
-if (nrow(analysis_data) == 151) {
-  message("Test Passed: The dataset has 151 rows.")
+# Test 2: Check that the population groups are correct
+expected_groups <- c("single adult", "family", "refugee")
+actual_groups <- unique(simulated_data$population_group)
+if (setequal(expected_groups, actual_groups)) {
+  print("Test 2 Passed: Population groups are correct.")
 } else {
-  stop("Test Failed: The dataset does not have 151 rows.")
+  print("Test 2 Failed: Population groups are incorrect.")
 }
 
-# Check if the dataset has 3 columns
-if (ncol(analysis_data) == 3) {
-  message("Test Passed: The dataset has 3 columns.")
+# Test 3: Check that date is formatted correctly
+if (all(!is.na(as.Date(simulated_data$date)))) {
+  print("Test 3 Passed: Date column is correctly formatted.")
 } else {
-  stop("Test Failed: The dataset does not have 3 columns.")
+  print("Test 3 Failed: Date column has invalid entries.")
 }
 
-# Check if all values in the 'division' column are unique
-if (n_distinct(analysis_data$division) == nrow(analysis_data)) {
-  message("Test Passed: All values in 'division' are unique.")
+# Test 4: Check for missing values
+if (all(!is.na(simulated_data))) {
+  print("Test 4 Passed: No missing values in the dataset.")
 } else {
-  stop("Test Failed: The 'division' column contains duplicate values.")
+  print("Test 4 Failed: Dataset contains missing values.")
 }
 
-# Check if the 'state' column contains only valid Australian state names
-valid_states <- c("New South Wales", "Victoria", "Queensland", "South Australia", 
-                  "Western Australia", "Tasmania", "Northern Territory", 
-                  "Australian Capital Territory")
+# Test 5: Check that numeric columns have reasonable values
+numeric_tests <- list(
+  entered_shelter = all(simulated_data$entered_shelter >= 100 & simulated_data$entered_shelter <= 500),
+  left_shelter = all(simulated_data$left_shelter >= 50 & simulated_data$left_shelter <= 400),
+  returned_to_shelter = all(simulated_data$returned_to_shelter >= 20 & simulated_data$returned_to_shelter <= 150),
+  moved_to_permanent_housing = all(simulated_data$moved_to_permanent_housing >= 30 & simulated_data$moved_to_permanent_housing <= 200),
+  ageunder16 = all(simulated_data$ageunder16 >= 20 & simulated_data$ageunder16 <= 100),
+  `age16-24` = all(simulated_data$`age16-24` >= 100 & simulated_data$`age16-24` <= 300),
+  `age25-34` = all(simulated_data$`age25-34` >= 150 & simulated_data$`age25-34` <= 350),
+  `age35-44` = all(simulated_data$`age35-44` >= 200 & simulated_data$`age35-44` <= 400),
+  `age45-54` = all(simulated_data$`age45-54` >= 250 & simulated_data$`age45-54` <= 450),
+  `age55-64` = all(simulated_data$`age55-64` >= 150 & simulated_data$`age55-64` <= 300),
+  age65over = all(simulated_data$age65over >= 50 & simulated_data$age65over <= 150)
+)
 
-if (all(analysis_data$state %in% valid_states)) {
-  message("Test Passed: The 'state' column contains only valid Australian state names.")
-} else {
-  stop("Test Failed: The 'state' column contains invalid state names.")
+for (col in names(numeric_tests)) {
+  if (numeric_tests[[col]]) {
+    print(paste("Test 5 Passed:", col, "values are within the expected range."))
+  } else {
+    print(paste("Test 5 Failed:", col, "values are outside the expected range."))
+  }
 }
 
-# Check if the 'party' column contains only valid party names
-valid_parties <- c("Labor", "Liberal", "Greens", "National", "Other")
-
-if (all(analysis_data$party %in% valid_parties)) {
-  message("Test Passed: The 'party' column contains only valid party names.")
+# Test 6: Check that the dataset has the correct number of rows
+num_dates <- length(unique(simulated_data$date))
+num_groups <- length(unique(simulated_data$population_group))
+expected_rows <- num_dates * num_groups
+actual_rows <- nrow(simulated_data)
+if (actual_rows == expected_rows) {
+  print("Test 6 Passed: Dataset has the correct number of rows.")
 } else {
-  stop("Test Failed: The 'party' column contains invalid party names.")
+  print(paste("Test 6 Failed: Expected", expected_rows, "rows but found", actual_rows, "rows."))
 }
 
-# Check if there are any missing values in the dataset
-if (all(!is.na(analysis_data))) {
-  message("Test Passed: The dataset contains no missing values.")
-} else {
-  stop("Test Failed: The dataset contains missing values.")
-}
-
-# Check if there are no empty strings in 'division', 'state', and 'party' columns
-if (all(analysis_data$division != "" & analysis_data$state != "" & analysis_data$party != "")) {
-  message("Test Passed: There are no empty strings in 'division', 'state', or 'party'.")
-} else {
-  stop("Test Failed: There are empty strings in one or more columns.")
-}
-
-# Check if the 'party' column has at least two unique values
-if (n_distinct(analysis_data$party) >= 2) {
-  message("Test Passed: The 'party' column contains at least two unique values.")
-} else {
-  stop("Test Failed: The 'party' column contains less than two unique values.")
-}

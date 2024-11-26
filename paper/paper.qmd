@@ -20,7 +20,7 @@ bibliography: references.bib
 library(tidyverse)
 
 # Load cleaned data
-analysis_data <- read_csv("data/02-analysis_data/analysis_data.csv")
+analysis_data <- read_csv("../data/02-analysis_data/analysis_data.csv")
 ```
 
 
@@ -70,14 +70,16 @@ The collected data from Open Data Toronto [@opendatatoronto] contains several ke
 For the purpose of the current analysis, only the chronic population group is included out of all population groups - for more details on the data cleaning process, refer to [Appendix - @sec-data-cleaning]
 
 ## Outcome variables
-
-As the focus is to analyze and predict the performance of Toronto's shelter system in reducing homelessness, the primary outcome variable of interest is the number of individuals who have successfully transitioned to permanent housing, denoted as **‘moved_to_housing’**. The **`moved_to_housing`** variable captures the count of people who exited the shelter system and moved into stable, permanent housing arrangements. This variable serves as a direct measure of the shelter system's success in achieving its goal of reducing homelessness to rare, brief, and non-recurring instances. By examining and modeling the **`moved_to_housing`** variable, we can explore effectiveness of the shelter system and identify trends and predictors that influence successful housing transitions.
+As the focus is to analyze and predict the performance of Toronto's shelter system in reducing homelessness, the primary outcome variable of interest is the number of individuals who have successfully transitioned to permanent housing, denoted as **'moved_to_housing'**. The **'moved_to_housing'** variable captures the count of people who exited the shelter system and moved into stable, permanent housing arrangements. This variable serves as a direct measure of the shelter system's success in achieving its goal of reducing homelessness to rare, brief, and non-recurring instances. By examining and modeling the **'moved_to_housing'** variable, we can explore effectiveness of the shelter system and identify trends and predictors that influence successful housing transitions.
 
 ```{r}
-#| label: fig-outcome-var
-#| fig-cap: Bills of penguins
 #| echo: false
-#| 
+#| eval: true
+#| warning: false
+#| message: false
+#| label: tbl-outcome-var
+#| tbl-cap: Yearly Averages of Individuals Moved to Permanent Housing
+
 # Add a year column to the dataset
 analysis_data <- analysis_data %>%
   mutate(year = format(date, "%Y"))
@@ -85,43 +87,138 @@ analysis_data <- analysis_data %>%
 # Group by year and calculate the average of moved_to_housing
 summary_table <- analysis_data %>%
   group_by(year) %>%
-  summarise(average_moved_to_housing = mean(moved_to_housing, na.rm = TRUE))
+  summarise(average_moved_to_housing = round(mean(moved_to_housing, na.rm = TRUE), 0))
 
 # Display the summary table
 knitr::kable(summary_table, caption = "Average Moved to Housing by Year")
 ```
 
 
-@fig-outcome-var presents 
-
-```{r}
-#| label: fig-planes
-#| fig-cap: Relationship between wing length and width
-#| echo: false
-#| warning: false
-#| message: false
-
-analysis_data <- read_csv(here::here("data/02-analysis_data/analysis_data.csv"))
-
-analysis_data |> 
-  ggplot(aes(x = width, y = length)) +
-  geom_point(alpha = 0.8) +
-  theme_minimal() +
-  labs(x = "Wing width (mm)",
-       y = "Wing length (mm)")
-```
-
-Talk way more about it. 
+@tbl-outcome-var summarizes the yearly averages of individuals successfully transitioned to permanent housing within Toronto's shelter system from 2018 to 2024. The data reflects consistent efforts in housing transitions, with yearly averages ranging from 162 to 330. The highest average number of moves occurred in 2023, while the lowest was recorded in 2021. These figures provide an overview of the shelter system's progress over time in reducing homelessness. It is important to consider that fluctuations may reflect external factors such as policy changes, economic conditions, or the impact of the COVID-19 pandemic. By examining these trends, the table offers an overview of the shelter system's performance and identifying areas for targeted improvements.
 
 ## Predictor variables
+The key predictor variables listed below are used in this current analysis to predict the outcome variable:
+**'age'**, **'date'**, **'age_time_interaction_term'**(constructed), **'returned_to_shelter'**, **'newly_identified'**, **'actively_homeless'**, and **'population_group_percentage'**.
 
-Add graphs, tables and text.
+### Age
+**'age'** serves as a predictor variable to capture differences in housing outcomes across life stages. The dataset includes age groups such as `ageunder16`, `age16-24`, `age25-34`, `age35-44`, `age45-54`, `age55-64`, and `age65over`, allowing for an understanding of how individuals in different age ranges interact with the shelter system. Each age group provides a window into potential barriers or facilitators that influence transitions to permanent housing. For instance, younger individuals in the `age16-24` range might face hurdles related to education or early career instability, while older adults in the `age65over` group may experience challenges stemming from health concerns or reduced mobility. By incorporating age into the model, the analysis can account for these differences and examine how housing transitions may be shaped by the specific needs and characteristics of each group.
 
-Use sub-sub-headings for each outcome variable and feel free to combine a few into one if they go together naturally.
+```{r}
+#| echo: false
+#| eval: true
+#| warning: false
+#| message: false
+#| label: fig-age
+#| fig-cap: Displays the average number of individuals in each age group using the shelter system from 2019 to 2024. The 35-44 age group has the highest count of observations while 65 and over age group has the lowest count of observations. 
+
+# Summarize data to get average counts for each age group
+age_demographics <- analysis_data %>%
+  summarise(
+    avg_ageunder16 = mean(ageunder16, na.rm = TRUE),
+    avg_age16_24 = mean(`age16-24`, na.rm = TRUE),
+    avg_age25_34 = mean(`age25-34`, na.rm = TRUE),
+    avg_age35_44 = mean(`age35-44`, na.rm = TRUE),
+    avg_age45_54 = mean(`age45-54`, na.rm = TRUE),
+    avg_age55_64 = mean(`age55-64`, na.rm = TRUE),
+    avg_age65over = mean(age65over, na.rm = TRUE)
+  ) %>%
+  pivot_longer(
+    cols = everything(),
+    names_to = "age_group",
+    values_to = "average_count"
+  )
+
+# Clean up age group names: remove "avg_" prefix and replace underscores with dashes
+age_demographics <- age_demographics %>%
+  mutate(age_group = gsub("_", "-", gsub("avg_", "", age_group)))
+
+# Reorder age groups to ensure "ageunder16" is on the far left
+age_demographics <- age_demographics %>%
+  mutate(age_group = factor(age_group, levels = c("ageunder16", "age16-24", "age25-34", 
+                                                  "age35-44", "age45-54", "age55-64", "age65over")))
+
+# Create a bar graph
+ggplot(age_demographics, aes(x = age_group, y = average_count, fill = age_group)) +
+  geom_bar(stat = "identity", width = 0.8) +
+  labs(
+    title = "Average Age Demographics in Shelter System",
+    x = "Age Group",
+    y = "Average Count"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
 
 
 
 
+```
+
+@fig-age illustrates the average distribution of individuals across various age groups within the shelter system. The data shows that middle-aged individuals, particularly those in the `age35-44` and `age45-54` groups, represent the largest average counts, suggesting that these age brackets may face greater challenges in transitioning out of the shelter system. Conversely, individuals in the `ageunder16` and `age65over` categories exhibit lower averages, indicating either fewer individuals from these age groups rely on the shelter system or their stays are less prolonged. The `age16-24` group has moderate representation, possibly reflecting unique barriers related to early adulthood, such as limited resources or support systems. These trends highlight the importance of age-specific interventions and support services to address the distinct needs of each demographic within the shelter system.
+
+### Date
+**'date'** is a key predictor variable in this analysis, representing the temporal aspect of transitions within the shelter system. In the dataset obtained from Open Data Toronto [@opendatatoronto], variable **'date'** is recorded and refreshed monthly, ranging from January 2019 to October 2024, and is last refreshed on November 15, 2024.
+By including the date variable, we can capture trends, seasonal effects, and long-term changes that influence the likelihood of individuals moving to permanent housing. For instance, systemic improvements, policy changes, or external factors such as economic conditions and the COVID-19 pandemic may impact shelter system outcomes over time. As a continuous variable, **'date'** can help identify whether the overall performance of the shelter system improves, stagnates, or declines as time progresses. When used in combination with interaction terms, date also allows for the examination of how specific subgroups, such as different age categories, experience changing outcomes over time, offering a dynamic perspective on the shelter system’s evolution.
+
+### Age & Time Interaction Term
+**'age_time_interaction_term'** is a constructed predictor variable that explores how the relationship between other predictor variables and the outcome variable evolves over time. Specifically, the interaction terms between age groups (e.g., `age16-24`, `age25-34`) and time (`date`) allow us to investigate whether the likelihood of transitioning to permanent housing varies across age demographics as time progresses. These terms are particularly useful for identifying trends that might not be apparent when considering age or time alone. For instance, a positive interaction term for `age16-24` and `date` would indicate that younger individuals are becoming more likely to move to permanent housing over time, potentially reflecting the success of targeted interventions. By examining these interaction terms, the analysis captures how age and time jointly influence housing outcomes, providing a deeper understanding of patterns within the shelter system.
+
+```{r}
+#| echo: false
+#| eval: true
+#| warning: false
+#| message: false
+#| label: fig-interaction
+#| fig-cap:
+
+# Filter and prepare data
+filtered_data <- analysis_data %>%
+  mutate(year = as.numeric(format(date, "%Y"))) %>%
+  filter(year >= 2019 & year <= 2023)
+
+# Summarize the average interaction terms per year
+interaction_summary <- filtered_data %>%
+  group_by(year) %>%
+  summarise(
+    avg_under16 = mean(interaction_age_under16_time, na.rm = TRUE),
+    avg_16_24 = mean(interaction_age16_24_time, na.rm = TRUE),
+    avg_25_34 = mean(interaction_age25_34_time, na.rm = TRUE),
+    avg_35_44 = mean(interaction_age35_44_time, na.rm = TRUE),
+    avg_45_54 = mean(interaction_age45_54_time, na.rm = TRUE),
+    avg_55_64 = mean(interaction_age55_64_time, na.rm = TRUE),
+    avg_65over = mean(interaction_age65over_time, na.rm = TRUE)
+  ) %>%
+  pivot_longer(
+    cols = starts_with("avg"),
+    names_to = "age_group",
+    values_to = "average_value"
+  ) %>%
+  mutate(age_group = recode(age_group,
+                            avg_under16 = "Under 16",
+                            avg_16_24 = "16-24",
+                            avg_25_34 = "25-34",
+                            avg_35_44 = "35-44",
+                            avg_45_54 = "45-54",
+                            avg_55_64 = "55-64",
+                            avg_65over = "65+"))
+
+# Create the line plot
+ggplot(interaction_summary, aes(x = year, y = average_value, color = age_group, group = age_group)) +
+  geom_line(size = 1) +                 # Add trend lines
+  geom_point(size = 2, alpha = 0.7) +   # Add data points
+  labs(
+    title = "Average Interaction Terms for Age Groups Over Time (2019-2023)",
+    x = "Year",
+    y = "Average Interaction Term Value",
+    color = "Age Group"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "right",
+    plot.title = element_text(hjust = 0.5)
+  )
+
+
+```
 
 
 
@@ -130,7 +227,7 @@ Use sub-sub-headings for each outcome variable and feel free to combine a few in
 
 The goal of our modelling strategy is twofold. Firstly,...
 
-Here we briefly describe the Bayesian analysis model used to investigate... Background details and diagnostics are included in [Appendix -@sec-model-details].
+Here we briefly describe the Bayesian analysis model used to  investigate... Background details and diagnostics are included in [Appendix -@sec-model-details].
 
 ## Model set-up
 
@@ -160,31 +257,11 @@ We can use maths by including latex between dollar signs, for instance $\theta$.
 Our results are summarized in @tbl-modelresults.
 
 ```{r}
-#| echo: false
-#| eval: true
-#| warning: false
-#| message: false
 
-library(rstanarm)
-
-first_model <-
-  readRDS(file = here::here("models/first_model.rds"))
 ```
 
 ```{r}
-#| echo: false
-#| eval: true
-#| label: tbl-modelresults
-#| tbl-cap: "Explanatory models of flight time based on wing width and wing length"
-#| warning: false
 
-modelsummary::modelsummary(
-  list(
-    "First model" = first_model
-  ),
-  statistic = "mad",
-  fmt = 2
-)
 ```
 
 
@@ -192,7 +269,7 @@ modelsummary::modelsummary(
 
 # Discussion {#sec-discussion}
 
-## First discussion point {#sec-first-point}
+## First discussion point
 
 If my paper were 10 pages, then should be be at least 2.5 pages. The discussion is a chance to show off what you know and what you learnt from all this. 
 
@@ -222,52 +299,24 @@ how data is cleaned for analysis data and model data, why lagged variables are c
 
 # Model details {#sec-model-details}
 
-## Posterior predictive check
+## Model Performance
 
 In @fig-ppcheckandposteriorvsprior-1 we implement a posterior predictive check. This shows...
 
 In @fig-ppcheckandposteriorvsprior-2 we compare the posterior with the prior. This shows... 
 
 ```{r}
-#| eval: true
-#| echo: false
-#| message: false
-#| warning: false
-#| label: fig-ppcheckandposteriorvsprior
-#| layout-ncol: 2
-#| fig-cap: "Examining how the model fits, and is affected by, the data"
-#| fig-subcap: ["Posterior prediction check", "Comparing the posterior with the prior"]
 
-pp_check(first_model) +
-  theme_classic() +
-  theme(legend.position = "bottom")
-
-posterior_vs_prior(first_model) +
-  theme_minimal() +
-  scale_color_brewer(palette = "Set1") +
-  theme(legend.position = "bottom") +
-  coord_flip()
 ```
 
-## Diagnostics
+## Model Diagnostics
 
 @fig-stanareyouokay-1 is a trace plot. It shows... This suggests...
 
 @fig-stanareyouokay-2 is a Rhat plot. It shows... This suggests...
 
 ```{r}
-#| echo: false
-#| eval: true
-#| message: false
-#| warning: false
-#| label: fig-stanareyouokay
-#| fig-cap: "Checking the convergence of the MCMC algorithm"
-#| fig-subcap: ["Trace plot", "Rhat plot"]
-#| layout-ncol: 2
 
-plot(first_model, "trace")
-
-plot(first_model, "rhat")
 ```
 
 # Apendix 2 {#sec-appendix2}

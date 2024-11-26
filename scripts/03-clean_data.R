@@ -35,15 +35,14 @@ chronic_data <- chronic_data %>%
 # Step 5: Add interaction terms for all age groups (including under 16) and time trends
 chronic_data <- chronic_data %>%
   mutate(
-    interaction_age_under16_time = ageunder16 * as.numeric(date),
-    interaction_age16_24_time = `age16-24` * as.numeric(date),
-    interaction_age25_34_time = `age25-34` * as.numeric(date),
-    interaction_age35_44_time = `age35-44` * as.numeric(date),
-    interaction_age45_54_time = `age45-54` * as.numeric(date),
-    interaction_age55_64_time = `age55-64` * as.numeric(date),
-    interaction_age65over_time = age65over * as.numeric(date)
+    interaction_age_under16_time = scale(ageunder16) * scale(as.numeric(date)),
+    interaction_age16_24_time = scale(`age16-24`) * scale(as.numeric(date)),
+    interaction_age25_34_time = scale(`age25-34`) * scale(as.numeric(date)),
+    interaction_age35_44_time = scale(`age35-44`) * scale(as.numeric(date)),
+    interaction_age45_54_time = scale(`age45-54`) * scale(as.numeric(date)),
+    interaction_age55_64_time = scale(`age55-64`) * scale(as.numeric(date)),
+    interaction_age65over_time = scale(age65over) * scale(as.numeric(date))
   )
-
 
 # Step 6: Select relevant columns for modeling
 analysis_data <- chronic_data %>%
@@ -65,7 +64,14 @@ analysis_data <- chronic_data %>%
 missing_summary <- analysis_data %>% summarise_all(~ sum(is.na(.)))
 print(missing_summary)
 
-#### Save data ####
+# Remove attributes from the scaled columns
+analysis_data <- analysis_data %>%
+  mutate(across(
+    starts_with("interaction_"), 
+    ~ as.numeric(.)
+  ))
+
+# Save the cleaned data
 write_csv(analysis_data, "data/02-analysis_data/analysis_data.csv")
 
 # Display a glimpse of the cleaned dataset

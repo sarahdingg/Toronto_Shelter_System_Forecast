@@ -1,6 +1,6 @@
 ---
 title: "Forecasting the Toronto Shelter System Performance on Reducing Chronic Homelessness "
-subtitle: "My subtitle if needed"
+subtitle: ""
 author: 
   - Sarah Ding
 thanks: "Code and data are available at: [https://github.com/sarahdingg/Toronto_Shelter_System_Forecast)."
@@ -168,7 +168,7 @@ By including the date variable, we can capture trends, seasonal effects, and lon
 #| warning: false
 #| message: false
 #| label: fig-interaction
-#| fig-cap:
+#| fig-cap: Trends in Average Interaction Terms for Age Groups Over Time (2018–2023)
 
 # Filter and prepare data
 filtered_data <- analysis_data %>%
@@ -199,14 +199,15 @@ interaction_summary <- filtered_data %>%
                             avg_35_44 = "35-44",
                             avg_45_54 = "45-54",
                             avg_55_64 = "55-64",
-                            avg_65over = "65+"))
+                            avg_65over = "65+"),
+         age_group = factor(age_group, levels = c("Under 16", "16-24", "25-34", "35-44", "45-54", "55-64", "65+")))
 
-# Create the line plot
+# Create the plot with smoother curves and reordered legend
 ggplot(interaction_summary, aes(x = year, y = average_value, color = age_group, group = age_group)) +
-  geom_line(size = 1) +                 # Add trend lines
-  geom_point(size = 2, alpha = 0.7) +   # Add data points
+  geom_smooth(se = FALSE, method = "loess", size = 1) +  # Add smooth curves
+  geom_point(size = 2, alpha = 0.7) +
   labs(
-    title = "Average Interaction Terms for Age Groups Over Time (2019-2023)",
+    title = "Average Interaction Terms for Age Groups Over Time (2018-2023)",
     x = "Year",
     y = "Average Interaction Term Value",
     color = "Age Group"
@@ -215,7 +216,12 @@ ggplot(interaction_summary, aes(x = year, y = average_value, color = age_group, 
   theme(
     legend.position = "right",
     plot.title = element_text(hjust = 0.5)
+  ) +
+  scale_y_continuous(expand = c(0, 0), limits = c(-0.5, 1)) +  # Allow for negative values
+  scale_color_manual(
+    values = c("pink", "red", "orange", "green", "blue", "purple", "brown")  # Custom colors
   )
+
 
 
 ```
@@ -275,7 +281,9 @@ If my paper were 10 pages, then should be be at least 2.5 pages. The discussion 
 
 ## What did we learn about the world? talk about differences before pandemic and after
 
-Please don't use these as sub-heading labels - change them to be what your point actually is.
+Which age groups benefit most over time from system improvements.
+Age groups that require more attention if their outcomes worsen over time.
+Policy implications, such as whether programs targeted at specific age groups need to be adjusted to meet changing needs.
 
 ## Third discussion point
 

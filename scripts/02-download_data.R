@@ -4,7 +4,7 @@
 # Date: 29 November 2024 
 # Contact: sarah.ding@mail.utoronto.ca
 # License: UofT
-# Pre-requisites: installation of tidyverse
+# Pre-requisites: installation of package `tidyverse`
 # Any other information needed?: N/A
 
 
@@ -29,10 +29,6 @@ datastore_resources <- filter(resources, tolower(format) %in% c('csv', 'geojson'
 data <- filter(datastore_resources, row_number()==1) %>% get_resource()
 data
 
-
-
 #### Save data ####
-# [...UPDATE THIS...]
-# change the_raw_data to whatever name you assigned when you downloaded it.
 write_csv(data, "data/01-raw_data/raw_data.csv") 
          

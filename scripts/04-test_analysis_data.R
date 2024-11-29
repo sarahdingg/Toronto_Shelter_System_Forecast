@@ -6,90 +6,90 @@
 # License: UofT
 # Pre-requisites: 
   #- package `tidyverse` is loaded and installed
-  #- analysis_data.csv is loaded and must have been run
+  #- analysis_data.parquet is loaded and must have been run
 # Any other information needed? N/A
 
 
 #### Workspace setup ####
+# Workspace setup
 library(tidyverse)
+library(arrow)
+library(testthat)
 
-cleaned_data <- read_csv("data/02-analysis_data/analysis_data.csv")
+# Load analysis data
+analysis_data <- read_parquet(here::here("data/02-analysis_data/analysis_data.parquet"))
 
+test_that("Dataset is read successfully and contains the expected columns", {
+  expect_true(file.exists("data/01-raw_data/raw_data.csv"))
+  expect_s3_class(raw_data, "data.frame")
+  expect_true(all(c("date(mmm-yy)", "population_group", "population_group_percentage") %in% colnames(raw_data)))
+})
 
-# Test 1: Check that all expected columns exist
-expected_columns <- c(
-  "date", "returned_to_shelter", "moved_to_housing", "actively_homeless",
-  "newly_identified", "ageunder16", "age16-24", "age25-34", "age35-44",
-  "age45-54", "age55-64", "age65over", "interaction_age_under16_time",
-  "interaction_age16_24_time", "interaction_age25_34_time",
-  "interaction_age35_44_time", "interaction_age45_54_time",
-  "interaction_age55_64_time", "interaction_age65over_time",
-  "population_group_percentage"
-)
-if (all(expected_columns %in% colnames(cleaned_data))) {
-  print("Test 1 Passed: All expected columns exist.")
-} else {
-  missing_cols <- setdiff(expected_columns, colnames(cleaned_data))
-  print(paste("Test 1 Failed: Missing columns:", paste(missing_cols, collapse = ", ")))
-}
+test_that("Date column is converted properly", {
+  expect_true("date" %in% colnames(cleaned_data))
+  expect_s3_class(cleaned_data$date, "Date")
+  expect_true(all(!is.na(cleaned_data$date)))
+  expect_true(all(format(cleaned_data$date, "%Y") >= 2018)) # Ensure valid years
+})
 
-# Test 2: Check that all rows belong to the "Chronic" population group
-if (all(cleaned_data$population_group == "Chronic")) {
-  print("Test 2 Passed: All rows belong to the 'Chronic' population group.")
-} else {
-  print("Test 2 Failed: Some rows do not belong to the 'Chronic' population group.")
-}
+test_that("Data is filtered for the Chronic population group", {
+  expect_true(all(chronic_data$population_group == "Chronic"))
+  expect_false(any(chronic_data$population_group != "Chronic"))
+})
 
-# Test 3: Check that the date column is correctly formatted
-if (all(!is.na(as.Date(cleaned_data$date)))) {
-  print("Test 3 Passed: Date column is correctly formatted.")
-} else {
-  print("Test 3 Failed: Date column has invalid entries.")
-}
+test_that("Population group percentage is numeric and clean", {
+  expect_true("population_group_percentage" %in% colnames(chronic_data))
+  expect_type(chronic_data$population_group_percentage, "double")
+  expect_false(any(is.na(chronic_data$population_group_percentage)))
+})
 
-# Test 4: Check for missing values
-if (all(!is.na(cleaned_data))) {
-  print("Test 4 Passed: No missing values in the dataset.")
-} else {
-  print("Test 4 Failed: Dataset contains missing values.")
-}
-
-# Test 5: Check numeric columns for reasonable ranges
-numeric_tests <- list(
-  returned_to_shelter = all(cleaned_data$returned_to_shelter >= 0),
-  moved_to_housing = all(cleaned_data$moved_to_housing >= 0),
-  actively_homeless = all(cleaned_data$actively_homeless >= 0),
-  newly_identified = all(cleaned_data$newly_identified >= 0),
-  population_group_percentage = all(cleaned_data$population_group_percentage >= 0 & cleaned_data$population_group_percentage <= 100),
-  interaction_age_under16_time = all(cleaned_data$interaction_age_under16_time >= 0),
-  interaction_age16_24_time = all(cleaned_data$interaction_age16_24_time >= 0),
-  interaction_age25_34_time = all(cleaned_data$interaction_age25_34_time >= 0),
-  interaction_age35_44_time = all(cleaned_data$interaction_age35_44_time >= 0),
-  interaction_age45_54_time = all(cleaned_data$interaction_age45_54_time >= 0),
-  interaction_age55_64_time = all(cleaned_data$interaction_age55_64_time >= 0),
-  interaction_age65over_time = all(cleaned_data$interaction_age65over_time >= 0)
-)
-
-for (col in names(numeric_tests)) {
-  if (numeric_tests[[col]]) {
-    print(paste("Test 5 Passed:", col, "values are within the expected range."))
-  } else {
-    print(paste("Test 5 Failed:", col, "values are outside the expected range."))
+test_that("Interaction terms are calculated and scaled correctly", {
+  interaction_columns <- grep("^interaction_", colnames(chronic_data), value = TRUE)
+  expect_true(length(interaction_columns) == 7) # Ensure all age groups are included
+  
+  for (col in interaction_columns) {
+    expect_true(!is.null(attr(chronic_data[[col]], "scaled:center")))
+    expect_true(!is.null(attr(chronic_data[[col]], "scaled:scale")))
+    expect_true(all(!is.na(chronic_data[[col]])))
   }
-}
+})
 
-# Test 6: Check that the dataset has at least some data for each age group
-if (all(rowSums(cleaned_data[, c("ageunder16", "age16-24", "age25-34", 
-                                 "age35-44", "age45-54", "age55-64", 
-                                 "age65over")]) > 0)) {
-  print("Test 6 Passed: Each row has data for at least one age group.")
-} else {
-  print("Test 6 Failed: Some rows have no data for any age group.")
-}
+test_that("Final dataset contains expected columns", {
+  required_columns <- c(
+    "date", "population_group", "returned_to_shelter", "moved_to_housing",
+    "actively_homeless", "newly_identified", "ageunder16", "age16-24",
+    "age25-34", "age35-44", "age45-54", "age55-64", "age65over",
+    "interaction_age_under16_time", "interaction_age16_24_time",
+    "interaction_age25_34_time", "interaction_age35_44_time",
+    "interaction_age45_54_time", "interaction_age55_64_time",
+    "interaction_age65over_time", "population_group_percentage"
+  )
+  expect_true(all(required_columns %in% colnames(analysis_data)))
+})
 
-# Test 7: Check that the interaction terms are consistent with their base values
-if (all(cleaned_data$interaction_age16_24_time == cleaned_data$`age16-24` * as.numeric(as.Date(cleaned_data$date)))) {
-  print("Test 7 Passed: Interaction terms for age16-24 are consistent.")
-} else {
-  print("Test 7 Failed: Interaction terms for age16-24 are inconsistent.")
-}
+test_that("Cleaned data is saved successfully as a parquet file", {
+  expect_true(file.exists("data/02-analysis_data/analysis_data.parquet"))
+  saved_data <- arrow::read_parquet("data/02-analysis_data/analysis_data.parquet")
+  expect_s3_class(saved_data, "data.frame")
+  expect_true(all(colnames(analysis_data) %in% colnames(saved_data)))
+  expect_equal(nrow(analysis_data), nrow(saved_data))
+})
+
+test_that("No missing values in key columns", {
+  key_columns <- c(
+    "date", "returned_to_shelter", "moved_to_housing", "actively_homeless",
+    "newly_identified", "population_group_percentage"
+  )
+  for (col in key_columns) {
+    expect_true(all(!is.na(analysis_data[[col]])))
+  }
+})
+
+test_that("Logical checks for relationships in data", {
+  expect_true(all(analysis_data$population_group_percentage >= 0))
+  expect_true(all(analysis_data$population_group_percentage <= 100))
+  expect_true(all(analysis_data$returned_to_shelter >= 0))
+  expect_true(all(analysis_data$newly_identified >= 0))
+})
+
+

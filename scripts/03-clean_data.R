@@ -5,14 +5,15 @@
 # Contact: sarah.ding@mail.utoronto.ca
 # License: UofT
 # Pre-requisites: 
-  # -downloaded data is saved to raw_data.csv and have been run
-  # -packages `tidyverse`,`lubridate`, `readr` must be installed and loaded
+# -downloaded data is saved to raw_data.csv and have been run
+# -packages `tidyverse`,`lubridate`, `readr`,`arrow` must be installed and loaded
 # Any other information needed? N/A
 
 #### Workspace setup ####
 library(tidyverse)
 library(lubridate)
 library(readr)
+library(arrow)
 
 
 # Step 1: Read in the dataset
@@ -60,10 +61,6 @@ analysis_data <- chronic_data %>%
     population_group_percentage
   )
 
-# Step 7: Check for missing data and handle appropriately
-missing_summary <- analysis_data %>% summarise_all(~ sum(is.na(.)))
-print(missing_summary)
-
 # Remove attributes from the scaled columns
 analysis_data <- analysis_data %>%
   mutate(across(
@@ -72,11 +69,10 @@ analysis_data <- analysis_data %>%
   ))
 
 # Save the cleaned data
-write_csv(analysis_data, "data/02-analysis_data/analysis_data.csv")
+write_parquet(analysis_data, "data/02-analysis_data/analysis_data.parquet")
 
 # Display a glimpse of the cleaned dataset
 glimpse(analysis_data)
-
 
 
 

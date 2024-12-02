@@ -17,7 +17,7 @@ library(arrow)
 library(testthat)
 
 # Load analysis data
-analysis_data <- read_parquet(here::here("data/02-analysis_data/analysis_data.parquet"))
+analysis_data <- read_parquet(here::here("...data/02-analysis_data/analysis_data.parquet"))
 
 test_that("Dataset is read successfully and contains the expected columns", {
   expect_true(file.exists("data/01-raw_data/raw_data.csv"))

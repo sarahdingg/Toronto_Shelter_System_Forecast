@@ -1,12 +1,11 @@
 ---
 title: "Forecasting the Toronto Shelter System Performance on Reducing Chronic Homelessness "
-subtitle: ""
 author: 
   - Sarah Ding
 thanks: "Code and data are available at: [https://github.com/sarahdingg/Toronto_Shelter_System_Forecast)."
 date: today
 date-format: long
-abstract: "First sentence. Second sentence. Third sentence. Fourth sentence."
+abstract: "This paper examines the Toronto shelter system's performance in reducing homelessness, with a focus on the dynamics of shelter use and predictors of permanent housing outcomes. Using observational data from the Shelter Management Information System (SMIS), we developed a linear regression model incorporating age groups, population group percentages, and time-based interactions to predict housing transitions. Our findings reveal variations in shelter outcomes across age groups and highlight the impact of systemic disruptions, such as the COVID-19 pandemic, on homelessness trends. These results provide insights into improving shelter policies and tracking progress toward reducing chronic homelessness in Toronto."
 format: pdf
 number-sections: true
 bibliography: references.bib
@@ -31,19 +30,16 @@ analysis_data <- read_parquet("../data/02-analysis_data/analysis_data.parquet")
 
 
 # Introduction
+Homelessness remains a significant social issue in Toronto, with thousands of individuals relying on the city's shelter system each year. Understanding the factors influencing shelter use and housing outcomes is critical to creating strategies that reduce chronic homelessness and promote stable housing. While considerable efforts have been made to collect and analyze data about individuals experiencing homelessness, much of this work focuses on high-level trends without adequately leveraging detailed population-specific insights. This paper seeks to address this limitation by examining the dynamics of shelter use and housing transitions within Toronto's shelter system, with a focus on the youth population and other demographic groups.
 
-Overview paragraph
+The Shelter System Flow data, collected and published by the City of Toronto[@opendatatoronto], provides detailed monthly records on the movement of individuals in and out of shelters. However, there is a lack of analysis that connects these patterns to predictive modeling, which can help policymakers and service providers anticipate future trends and allocate resources effectively. This paper aims to fill this gap by using statistical models to analyze shelter system dynamics, predict housing transitions, and evaluate the system's performance in reducing chronic homelessness.
 
-Estimand paragraph
+To achieve this, we developed a linear regression model using demographic and system-related variables to predict the likelihood of individuals moving to permanent housing. The model was applied to examine trends over time, particularly in the context of COVID-19, which dramatically altered shelter system flows. Our analysis revealed key differences in housing outcomes across age groups, highlighting the groups that have benefited most from system improvements. The results provide actionable insights for policymakers and service providers, including areas for targeted interventions and resource allocation.
 
-Results paragraph
+The remainder of this paper is structured as follows: @sec-data provides a detailed description of the data and methodology, including the modeling approach and key variables. @sec-model provides the details of model set as well as validation, @sec-results presents the results of the model, and @sec-discussion discusses the findings and relevant improvements to be made. 
 
-Why it matters paragraph
-
-The remainder of this paper is structured as follows. @sec-data....
-
-
-
+## Estimand
+The estimand of this study is the predicted probability of individuals moving to permanent housing from Toronto's shelter system, conditional on demographic factors and system-related variables. Specifically, the model estimates the expected housing outcomes for individuals across different age groups, accounting for variables such as shelter re-entry, chronic homelessness, and newly identified shelter users. This focus aligns with the broader objective of assessing the shelter system’s effectiveness in facilitating transitions to permanent housing, particularly for vulnerable populations. The estimand serves as a measure of the system’s performance and provides actionable information for policymakers to optimize resource allocation and design interventions targeted at improving housing outcomes.
 
 
 
@@ -52,18 +48,7 @@ The remainder of this paper is structured as follows. @sec-data....
 ## Overview
 The dataset used for the current analysis is obtained from Open Data Toronto [@opendatatoronto], it is last refreshed on November 15, 2024. Open Data Toronto is an open source accessible to the public, 
 
-We use the statistical programming language R [@citeR].... Our data [@shelter].... Following @tellingstories, we consider...
-
-Overview text
-
-## Measurement
-	
-Some paragraphs about how we go from a phenomena in the world to an entry in the dataset.
-
-
-## Data Cleaning
--Why I am only doing chronic population group. 
--Constructing Variables
+We use the statistical programming language R [@citeR], the analysis was conducted using a suite of R packages to enhance data manipulation, visualization, and reproducibility. The **tidyverse** package [@citeTidyverse] was central to data wrangling and pipeline construction, providing a cohesive framework for handling and visualizing data. For managing and analyzing time-series data, the **lubridate** package [@citeLubridate] was employed to streamline the processing of date-related variables. Model validation and testing were supported using **testthat** [@citeTestthat], ensuring robust and reproducible results. Additionally, the dynamic reporting capabilities of **knitr** [@citeKnitr] were instrumental in generating this document, seamlessly integrating code and narrative. Finally, **scales** [@citeScales] enhanced the presentation of numerical data in visualizations, ensuring clarity and precision in communicating results. Together, these tools provided a comprehensive and efficient environment for data analysis. 
 
 ## Variables {#sec-variables}
 The collected data from Open Data Toronto [@opendatatoronto] contains several key variables relevant to the analysis:
@@ -656,7 +641,30 @@ Similarly, for the "65+" group, the actual count is 1,405,676, and the predicted
 #| warning: false
 #| message: false
 
-# Assuming `yearly_results` has been generated as per your script
+# Generate yearly_results first
+yearly_results <- model_data %>%
+  mutate(year = lubridate::year(date)) %>%
+  group_by(year) %>%
+  summarise(
+    `Under 16 (Actual)` = sum(ageunder16 * moved_to_housing, na.rm = TRUE),
+    `Under 16 (Predicted)` = sum(ageunder16 * predicted_moved_to_housing, na.rm = TRUE),
+    `16-24 (Actual)` = sum(`age16-24` * moved_to_housing, na.rm = TRUE),
+    `16-24 (Predicted)` = sum(`age16-24` * predicted_moved_to_housing, na.rm = TRUE),
+    `25-34 (Actual)` = sum(`age25-34` * moved_to_housing, na.rm = TRUE),
+    `25-34 (Predicted)` = sum(`age25-34` * predicted_moved_to_housing, na.rm = TRUE),
+    `35-44 (Actual)` = sum(`age35-44` * moved_to_housing, na.rm = TRUE),
+    `35-44 (Predicted)` = sum(`age35-44` * predicted_moved_to_housing, na.rm = TRUE),
+    `45-54 (Actual)` = sum(`age45-54` * moved_to_housing, na.rm = TRUE),
+    `45-54 (Predicted)` = sum(`age45-54` * predicted_moved_to_housing, na.rm = TRUE),
+    `55-64 (Actual)` = sum(`age55-64` * moved_to_housing, na.rm = TRUE),
+    `55-64 (Predicted)` = sum(`age55-64` * predicted_moved_to_housing, na.rm = TRUE),
+    `65+ (Actual)` = sum(age65over * moved_to_housing, na.rm = TRUE),
+    `65+ (Predicted)` = sum(age65over * predicted_moved_to_housing, na.rm = TRUE)
+  )
+
+# Convert counts to numeric if necessary (if formatting with commas was applied)
+yearly_results <- yearly_results %>%
+  mutate(across(-year, ~ as.numeric(gsub(",", "", .))))
 
 # Pivot the data to long format for visualization
 long_results <- yearly_results %>%
@@ -667,17 +675,14 @@ long_results <- yearly_results %>%
     values_to = "Count"
   )
 
-# Convert Count back to numeric if it's formatted with commas
-long_results <- long_results %>%
-  mutate(Count = as.numeric(gsub(",", "", Count)))
-
 # Create the bar graph
 ggplot(long_results, aes(x = year, y = Count, fill = Type)) +
   geom_bar(stat = "identity", position = "dodge") +
   facet_wrap(~ Age_Group, scales = "free_y") +
   labs(
     x = "Year",
-    y = "Count"
+    y = "Count",
+    title = "Yearly Actual vs. Predicted Counts of Individuals Moved to Housing by Age Group"
   ) +
   theme_minimal() +
   theme(
@@ -686,8 +691,9 @@ ggplot(long_results, aes(x = year, y = Count, fill = Type)) +
     legend.title = element_text(face = "bold", size = 10),
     axis.text.x = element_text(angle = 45, hjust = 1)
   ) +
-  scale_y_continuous(labels = comma) +
+  scale_y_continuous(labels = scales::comma) +
   scale_fill_manual(values = c("Actual" = "blue", "Predicted" = "red"))
+
 
 ```
 

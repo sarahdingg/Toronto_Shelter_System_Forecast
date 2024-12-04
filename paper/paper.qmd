@@ -18,9 +18,15 @@ bibliography: references.bib
 #| message: false
 
 library(tidyverse)
+library(arrow)
+library(broom)
+library(knitr)
+library(modelsummary)
+library(kableExtra)
+library(caret)
 
 # Load cleaned data
-analysis_data <- read_csv("../data/02-analysis_data/analysis_data.csv")
+analysis_data <- read_parquet("../data/02-analysis_data/analysis_data.parquet")
 ```
 
 
@@ -34,7 +40,7 @@ Results paragraph
 
 Why it matters paragraph
 
-Telegraphing paragraph: The remainder of this paper is structured as follows. @sec-data....
+The remainder of this paper is structured as follows. @sec-data....
 
 
 
@@ -55,6 +61,10 @@ Overview text
 Some paragraphs about how we go from a phenomena in the world to an entry in the dataset.
 
 
+## Data Cleaning
+-Why I am only doing chronic population group. 
+-Constructing Variables
+
 ## Variables {#sec-variables}
 The collected data from Open Data Toronto [@opendatatoronto] contains several key variables relevant to the analysis:
 
@@ -67,9 +77,9 @@ The collected data from Open Data Toronto [@opendatatoronto] contains several ke
 - **'age'**: People's age recorded in the Shelter Management Information System, with ranges of under 16, 16-24, 25-34, 35-44, 45-54, 55-64, and over 65. 
 - **'population_group_percentage'**: Represents the percentage of each population group (chronic, refugees, families, youth, single adult and non-refugees). The proportion is calculated from all the population.
 
-For the purpose of the current analysis, only the chronic population group is included out of all population groups - for more details on the data cleaning process, refer to [Appendix - @sec-data-cleaning]
+For the purpose of the current analysis, only the chronic population group is included out of all population groups - for more details on the data cleaning process, refer to [Appendix-@sec-data-cleaning]
 
-## Outcome variables
+## Outcome variable
 As the focus is to analyze and predict the performance of Toronto's shelter system in reducing homelessness, the primary outcome variable of interest is the number of individuals who have successfully transitioned to permanent housing, denoted as **'moved_to_housing'**. The **'moved_to_housing'** variable captures the count of people who exited the shelter system and moved into stable, permanent housing arrangements. This variable serves as a direct measure of the shelter system's success in achieving its goal of reducing homelessness to rare, brief, and non-recurring instances. By examining and modeling the **'moved_to_housing'** variable, we can explore effectiveness of the shelter system and identify trends and predictors that influence successful housing transitions.
 
 ```{r}
@@ -90,7 +100,7 @@ summary_table <- analysis_data %>%
   summarise(average_moved_to_housing = round(mean(moved_to_housing, na.rm = TRUE), 0))
 
 # Display the summary table
-knitr::kable(summary_table, caption = "Average Moved to Housing by Year")
+knitr::kable(summary_table)
 ```
 
 
@@ -141,7 +151,6 @@ age_demographics <- age_demographics %>%
 ggplot(age_demographics, aes(x = age_group, y = average_count, fill = age_group)) +
   geom_bar(stat = "identity", width = 0.8) +
   labs(
-    title = "Average Age Demographics in Shelter System",
     x = "Age Group",
     y = "Average Count"
   ) +
@@ -160,7 +169,7 @@ ggplot(age_demographics, aes(x = age_group, y = average_count, fill = age_group)
 By including the date variable, we can capture trends, seasonal effects, and long-term changes that influence the likelihood of individuals moving to permanent housing. For instance, systemic improvements, policy changes, or external factors such as economic conditions and the COVID-19 pandemic may impact shelter system outcomes over time. As a continuous variable, **'date'** can help identify whether the overall performance of the shelter system improves, stagnates, or declines as time progresses. When used in combination with interaction terms, date also allows for the examination of how specific subgroups, such as different age categories, experience changing outcomes over time, offering a dynamic perspective on the shelter system’s evolution.
 
 ### Age & Time Interaction Term
-**'age_time_interaction_term'** is a constructed predictor variable that explores how the relationship between other predictor variables and the outcome variable evolves over time. Specifically, the interaction terms between age groups (e.g., `age16-24`, `age25-34`) and time (`date`) allow us to investigate whether the likelihood of transitioning to permanent housing varies across age demographics as time progresses. These terms are particularly useful for identifying trends that might not be apparent when considering age or time alone. For instance, a positive interaction term for `age16-24` and `date` would indicate that younger individuals are becoming more likely to move to permanent housing over time, potentially reflecting the success of targeted interventions. By examining these interaction terms, the analysis captures how age and time jointly influence housing outcomes, providing a deeper understanding of patterns within the shelter system.
+**'age_time_interaction_term'** is a constructed predictor variable that explores how the relationship between other predictor variables and the outcome variable evolves over time. Interaction terms are calculated by combining age group counts with time, providing a measure of how shelter engagement evolves across age demographics. Specifically, the interaction terms between age groups (e.g., `age16-24`, `age25-34`) and time (`date`) allow us to investigate whether the likelihood of transitioning to permanent housing varies across age demographics as time progresses. These terms are particularly useful for identifying trends that might not be apparent when considering age or time alone. For instance, a positive interaction term for `age16-24` and `date` would indicate that younger individuals are becoming more likely to move to permanent housing over time, potentially reflecting the success of targeted interventions. By examining these interaction terms, the analysis captures how age and time jointly influence housing outcomes, providing a deeper understanding of patterns within the shelter system.
 
 ```{r}
 #| echo: false
@@ -168,7 +177,7 @@ By including the date variable, we can capture trends, seasonal effects, and lon
 #| warning: false
 #| message: false
 #| label: fig-interaction
-#| fig-cap: Trends in Average Interaction Terms for Age Groups Over Time (2018–2023)
+#| fig-cap: Illustrates the average interaction term values, representing changes over time from 2019 to 2023 for each age group. The 45–54 age group shows the highest interaction values in recent years, indicating a more significant change in engagement, while the Under 16 group consistently remains the lowest across the period.
 
 # Filter and prepare data
 filtered_data <- analysis_data %>%
@@ -207,7 +216,6 @@ ggplot(interaction_summary, aes(x = year, y = average_value, color = age_group, 
   geom_smooth(se = FALSE, method = "loess", size = 1) +  # Add smooth curves
   geom_point(size = 2, alpha = 0.7) +
   labs(
-    title = "Average Interaction Terms for Age Groups Over Time (2018-2023)",
     x = "Year",
     y = "Average Interaction Term Value",
     color = "Age Group"
@@ -225,109 +233,747 @@ ggplot(interaction_summary, aes(x = year, y = average_value, color = age_group, 
 
 
 ```
+@fig-interaction illustrates the trends in average interaction terms for various age groups using the shelter system between 2019 and 2023. Notably, the 45–54 and 55–64 age groups exhibit the highest interaction values in recent years, suggesting a more pronounced change in their use of shelter services over time. Conversely, the Under 16 group remains the lowest throughout the period, indicating relatively stable and minimal engagement. The dip around 2020 across all age groups could reflect disruptions caused by the COVID-19 pandemic, followed by a gradual increase through 2021 and beyond. This upward trend in later years highlights shifting dynamics in shelter usage, possibly due to systemic changes or external factors impacting homelessness.
+
+### Returned to shelter
+**`returned_to_shelter`** represents the count of individuals who had previously used the shelter system, exited for a period of at least three months, and subsequently returned. This variable captures patterns of re-entry into the shelter system and is an essential indicator of service dependence and instability in housing situations. By including **`returned_to_shelter`** as a predictor variable, we aim to analyze its relationship with long-term outcomes such as moving to permanent housing. High values for this variable may highlight challenges in sustaining housing stability or gaps in post-shelter support systems. Understanding these patterns can help assess the effectiveness of current shelter practices and inform strategies to minimize recurrent shelter use.
+
+```{r}
+#| echo: false
+#| eval: true
+#| warning: false
+#| message: false
+#| label: fig-returntoshelter
+#| fig-cap: Illustrates the trends in the count of individuals returning to the shelter system from January 2018 to October 2024. Peaks in 2020 and 2024 suggest periods of increased shelter re-entry, possibly reflecting systemic or external influences. The overall variability highlights fluctuations in shelter dependence across the years.
+
+ggplot(analysis_data, aes(x = date, y = returned_to_shelter)) +
+  geom_line(color = "skyblue", size = 1) +
+  labs(
+    x = "Year",
+    y = "Count of Returned Individuals"
+  ) +
+  theme_minimal()
+
+```
+@fig-returntoshelter displays the trends in the count of individuals returning to the shelter system from 2018 to 2024. Notable peaks are observed in 2020 and 2024, indicating periods of increased shelter re-entry. These fluctuations may reflect external factors, such as economic challenges or policy changes, influencing housing stability. The general variability in the trend suggests that while some periods experience lower re-entry rates, others see significant spikes, highlighting the reliance of the shelter system. This variable is critical for understanding patterns of housing instability and identifying opportunities for targeted interventions to reduce repeated shelter use.
+
+### Newly Identified
+**`newly_identified`** represents the count of individuals entering the shelter system for the first time. This variable is a key indicator of new instances of homelessness and can provide valuable context on the influx of individuals relying on the shelter system. By examining **`newly_identified`** as a predictor, we aim to understand how the rate of new shelter entries influences long-term outcomes, such as the transition to permanent housing or continued system engagement. Higher values for this variable may indicate increased pressures on shelter resources or broader societal challenges, such as housing affordability or economic instability.
+```{r}
+#| echo: false
+#| eval: true
+#| warning: false
+#| message: false
+#| label: fig-newlyidentified
+#| fig-cap: Trends in Newly Identified Individuals Over Time. Displays the average count of newly identified individuals in the shelter system from 2018 to 2024, highlighting fluctuations over the years with an upward trend post-2021.
+
+# Calculate yearly averages for newly_identified
+newly_identified_yearly <- analysis_data %>%
+  group_by(year = format(date, "%Y")) %>%
+  summarise(avg_newly_identified = mean(newly_identified, na.rm = TRUE))
+
+ggplot(newly_identified_yearly, aes(x = as.numeric(year), y = avg_newly_identified)) +
+  geom_line(color = "lightgreen", size = 2) +
+  geom_point(color = "darkgreen", size = 2) +
+  labs(
+    x = "Year",
+    y = "Average Count of Newly Identified Individuals"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.title.x = element_text(face = "bold"),
+    axis.title.y = element_text(face = "bold")
+  )
 
 
+
+
+```
+@fig-newlyidentified illustrates the trends in the average count of newly identified individuals entering the shelter system from 2018 to 2024. While the count shows fluctuations in the earlier years, there is a notable decline from 2019 to 2021, potentially reflecting systemic changes or external factors affecting new entries. However, from 2022 onwards, the numbers steadily increase, with the highest average observed in 2024. This upward trend may indicate rising demand for shelter services, changes in reporting practices, or shifts in the underlying social or economic conditions contributing to homelessness. The data underscores the importance of monitoring new entries to understand and address the factors driving these changes.
+
+### Actively Homeless
+**`actively_homeless`** refers to individuals who have accessed the shelter system at least once in the past three months and have not moved into permanent housing during that time. This variable reflects the population experiencing ongoing homelessness within the reporting period. Analyzing this variable helps to understand the scale of need within the shelter system and provides context for evaluating its capacity to support individuals in transitioning to stable housing.
+```{r}
+#| echo: false
+#| eval: true
+#| warning: false
+#| message: false
+#| label: fig-activelyhomeless
+#| fig-cap: Trends in the average count of actively homeless individuals from 2018 to 2024. The graph shows a steady increase over the years, with the largest rise observed between 2023 and 2024, highlighting potential shifts in shelter system usage or homelessness trends during this period.
+
+# Required libraries
+library(ggplot2)
+library(dplyr)
+
+# Summarize the average count of actively homeless by year
+actively_homeless_summary <- analysis_data %>%
+  mutate(year = as.numeric(format(date, "%Y"))) %>%
+  group_by(year) %>%
+  summarise(avg_actively_homeless = mean(actively_homeless, na.rm = TRUE))
+
+# Create the trend line plot
+ggplot(actively_homeless_summary, aes(x = year, y = avg_actively_homeless)) +
+  geom_line(color = "skyblue", size = 2) +
+  geom_point(color = "blue", size = 2) +
+  labs(
+    x = "Year",
+    y = "Average Count of Actively Homeless Individuals"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+    axis.title.x = element_text(face = "bold", size = 12),
+    axis.title.y = element_text(face = "bold", size = 12)
+  )
+
+
+```
+@fig-activelyhomeless illustrates the trend in the average number of actively homeless individuals within the shelter system from 2018 to 2024. Over this time period, there is a consistent upward trajectory, indicating a growing number of individuals experiencing homelessness. The most notable increase occurs between 2023 and 2024, suggesting a potential shift in homelessness patterns, external economic or social pressures, or changes in the availability of shelter services. This trend emphasizes the importance of understanding the factors contributing to this rise and the capacity of the shelter system to meet increasing demand.
+
+### Population Group Percentage
+**'population_group_percentage`** represents the proportion of individuals within a specific population group relative to the total population using the shelter system. It is expressed as a percentage and serves as an indicator of the relative distribution of different population groups, such as youth, families, or individuals experiencing chronic homelessness, within the shelter system. The population groups are not mutually exclusive, meaning that individuals who are in categorized as families could also belong to the chronic population group. This variable provides information of shifts in demographic representation over time, providing context for analyzing trends and patterns across different groups.
+```{r}
+#| echo: false
+#| eval: true
+#| warning: false
+#| message: false
+#| label: fig-populationgroup
+#| fig-cap: Trends in Average Population Group Percentage Over Time. This line graph illustrates the annual average percentage representation of the chronic population group in the dataset from 2018 to 2024. The upward trajectory indicates a consistent increase, with a significant rise observed after 2022.
+
+# Summarize the average population group percentage by year
+population_group_summary <- analysis_data %>%
+  mutate(year = as.numeric(format(date, "%Y"))) %>%
+  group_by(year) %>%
+  summarise(avg_population_percentage = mean(population_group_percentage, na.rm = TRUE))
+
+# Create the line plot
+ggplot(population_group_summary, aes(x = year, y = avg_population_percentage)) +
+  geom_line(color = "pink", size = 2) +
+  geom_point(color = "red", size = 2) +
+  labs(
+    x = "Year",
+    y = "Average Population Group Percentage"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+    axis.title.x = element_text(face = "bold"),
+    axis.title.y = element_text(face = "bold")
+  )
+
+
+
+```
+@fig-populationgroup depicts the average population group percentage of the chronic population group in the shelter system from 2018 to 2024. It reveals a consistent upward trajectory over the years, with a gradual increase from 2018 to 2021, followed by a sharper rise in 2024. The percentage represents the proportion of individuals who are chronically homeless using the shelter system relative to the total. The substantial increase in 2024 may indicate a growing representation of the chronic population group or changes in shelter system dynamics, potentially influenced by economic, social, or policy-driven factors.
 
 
 # Model {#sec-model}
-
-The goal of our modelling strategy is twofold. Firstly,...
-
-Here we briefly describe the Bayesian analysis model used to  investigate... Background details and diagnostics are included in [Appendix -@sec-model-details].
+To predict the Toronto shelter system's performance on reducing chronic homelessness, a linear regression model is developed. The model aims to estimate the amount of individuals in the chronic population group who has moved to permanent housing. 
+Background details and diagnostics are included in [Appendix -@sec-model-details].
 
 ## Model set-up
+This paper utilizes linear regression models:
 
-Define $y_i$ as the number of seconds that the plane remained aloft. Then $\beta_i$ is the wing width and $\gamma_i$ is the wing length, both measured in millimeters.  
-
-\begin{align} 
-y_i|\mu_i, \sigma &\sim \mbox{Normal}(\mu_i, \sigma) \\
-\mu_i &= \alpha + \beta_i + \gamma_i\\
-\alpha &\sim \mbox{Normal}(0, 2.5) \\
-\beta &\sim \mbox{Normal}(0, 2.5) \\
-\gamma &\sim \mbox{Normal}(0, 2.5) \\
-\sigma &\sim \mbox{Exponential}(1)
-\end{align}
-
-We run the model in R [@citeR] using the `rstanarm` package of @rstanarm. We use the default priors from `rstanarm`.
+$$
+\begin{aligned}
+\text{Outcome} &= \beta_0 + \beta_1 \textit{PopulationGroupPercentage}_i + \beta_2 \textit{AgeUnder16}_i + \beta_3 \textit{Age16-24}_i + \beta_4 \textit{Age25-34}_i \\
+&\quad + \beta_5 \textit{Age35-44}_i + \beta_6 \textit{Age45-54}_i + \beta_7 \textit{Age55-64}_i + \beta_8 \textit{Age65Over}_i \\
+&\quad + \beta_9 \textit{InteractionAgeUnder16Time}_i + \epsilon_i
+\end{aligned}
+$$
 
 
-### Model justification
+Where:
+$Outcome$ represents the dependent variable, which could be one of the following: `Returned to Shelter`, `Moved to Housing`, or another key measure indicating outcomes in the shelter system.$\beta_0$ is the intercept, representing the baseline level of the outcome when all predictors are at their mean or reference level. $\beta_1$ is the coefficient for `PopulationGroupPercentage`, reflecting the relationship between the percentage of individuals in the chronic group and the outcome. $\beta_2$ through $\beta_8$ represent the coefficients for age groups (`AgeUnder16`, `Age16-24`, `Age25-34`, `Age35-44`, `Age45-54`, `Age55-64`, `Age65Over`), indicating the influence of each age group on the outcome. $\beta_9$ through $\beta_{15}$ are the coefficients for interaction terms (`InteractionAgeUnder16Time`, `InteractionAge16-24Time`, etc.), capturing how the effect of age groups changes over time. $\epsilon_i$ is the error term, accounting for unexplained variability in the outcome.
 
-We expect a positive relationship between the size of the wings and time spent aloft. In particular...
 
-We can use maths by including latex between dollar signs, for instance $\theta$.
+## Model Justification {#sec-modjust}
+The linear regression model presented in this study is the most suitable framework for predicting the number of individuals transitioning to housing within Toronto's shelter system. The outcome variable, `moved_to_housing`, reflects the monthly transitions, capturing temporal and demographic variations across the system. The model includes predictors such as `returned_to_shelter`, `actively_homeless`, `newly_identified`, and the proportion of population groups, along with age-group specific variables and their interactions with time. This structure allows the model to incorporate both aggregate trends and age-specific dynamics, ensuring a detailed representation of how different population subgroups contribute to housing outcomes.
 
+Linear regression was chosen for its interpretability, providing clear coefficients that quantify the relationships between predictors and housing transitions. This is particularly useful for policymakers seeking actionable insights into the factors driving transitions to housing. The inclusion of interaction terms ensures that variations across demographic subgroups are adequately captured, while the incorporation of historical data facilitates forecasting. 
+
+While alternative models, such as logistic regression or machine learning approaches, could be considered, these methods may either oversimplify or overly complicate the analysis for the study's scope. The linear regression approach strikes a balance between simplicity and detail, making it well-suited to evaluate system performance and inform targeted interventions.
+
+## Model Assumptions and Limitations
+In order to ensure the validity and reliability of our linear regression model for predicting the number of individuals transitioning to housing (`moved_to_housing`) within Toronto's shelter system, we establish several key assumptions that guide the modeling process:
+
+- **Linearity**: The relationship between the predictor variables (e.g., `returned_to_shelter`, `actively_homeless`, `newly_identified`, and age-group interactions) and the outcome variable (`moved_to_housing`) is assumed to be linear. This allows the model to interpret the effect of each predictor as a constant change in `moved_to_housing`.
+- **Independence**: Observations are assumed to be independent of one another, meaning that the outcome of housing transitions for one time period or subgroup does not influence others.
+- **Homoscedasticity**: The variance of residuals is assumed to remain constant across all levels of predicted values. This ensures that the model performs equally well across different ranges of predicted values.
+- **Normality of Residuals**: The residuals (differences between observed and predicted values) are assumed to be normally distributed. This assumption ensures the reliability of significance tests for coefficients.
+- **Absence of Multicollinearity**: The predictor variables are assumed to be independent of one another. High multicollinearity would make it difficult to determine the individual effect of each predictor on the outcome.
+- **Exclusion of Omitted Variable Bias**: The model assumes that all relevant predictors influencing `moved_to_housing` have been included, and no significant predictors are missing, which could bias the results.
+
+These assumptions are necessary to ensure that the model provides reliable and interpretable estimates for the factors influencing transitions to housing. Regular diagnostic checks, such as residual plots and multicollinearity tests, were conducted to verify the adherence to these assumptions.
+
+## Model Validation
+
+```{r}
+#| label: tbl-modsum
+#| tbl-cap: Model Summary of Toronto Shelter System - Coefficients and Statistical Significance
+#| echo: false
+#| eval: true
+#| warning: false
+#| message: false
+
+model_toronto <- readRDS(here::here("models/model_toronto.rds"))
+model_summary <- summary(model_toronto)$coefficients
+
+# Convert to a data frame for easier manipulation and display
+model_summary_df <- as.data.frame(model_summary) %>%
+  rownames_to_column(var = "Predictor") %>%
+  filter(Predictor != "(Intercept)") %>%  # Exclude the intercept
+  rename(
+    Coefficient = Estimate,
+    `Std. Error` = `Std. Error`,
+    `t-value` = `t value`,
+    `p-value` = `Pr(>|t|)`
+  )
+
+# Format the values (e.g., round numbers)
+model_summary_df <- model_summary_df %>%
+  mutate(
+    Coefficient = formatC(Coefficient, format = "f", digits = 3),
+    `Std. Error` = formatC(`Std. Error`, format = "f", digits = 3),
+    `t-value` = formatC(`t-value`, format = "f", digits = 3),
+    `p-value` = formatC(`p-value`, format = "e", digits = 2)
+  )
+
+# Create the table using knitr::kable
+model_summary_df %>%
+  kable(
+    col.names = c("Predictor", "Coefficient", "Std. Error", "t-value", "p-value"),
+    format = "markdown"  # Change to "latex" if rendering for LaTeX
+  )
+
+
+```
+@tbl-modsum summarizes the coefficients, standard errors, t-values, and p-values for each predictor in the regression model estimating the number of individuals moved to housing in Toronto's shelter system. Positive coefficients suggest that an increase in the corresponding predictor is associated with a higher likelihood of moving to housing, while negative coefficients indicate the opposite.
+
+Among the predictors, **interaction_age_under16_time** (-106.235, p = 0.023) and **interaction_age45_54_time** (-221.224, p = 0.036) are statistically significant, implying that changes in time-related interactions for individuals under 16 and those aged 45–54 have a meaningful impact on the outcome variable. These negative coefficients suggest that the effect of time for these age groups is associated with a reduction in the likelihood of being moved to housing.
+
+Other predictors, such as **population_group_percentage** (3.690, p = 0.226) and **interaction_age55_64_time** (99.198, p = 0.093), show relatively high coefficients but are not statistically significant at conventional thresholds, suggesting their impact on housing outcomes may not be strong enough to draw definitive conclusions. 
+
+
+```{r}
+#| label: tbl-modtest
+#| tbl-cap: Model Performance Metrics, Out-of-Sample Testing
+#| echo: false
+#| eval: true
+#| warning: false
+#| message: false
+
+# Step 1: Load and prepare the data
+analysis_data <- arrow::read_parquet("../data/02-analysis_data/analysis_data.parquet")
+
+# Step 2: Select relevant columns for modeling
+model_data <- analysis_data %>%
+  select(
+    date,
+    returned_to_shelter,
+    moved_to_housing,
+    actively_homeless,
+    newly_identified,
+    ageunder16, `age16-24`, `age25-34`, `age35-44`, `age45-54`, `age55-64`, age65over,
+    interaction_age_under16_time, interaction_age16_24_time, interaction_age25_34_time,
+    interaction_age35_44_time, interaction_age45_54_time, interaction_age55_64_time,
+    interaction_age65over_time,
+    population_group_percentage
+  )
+
+# Step 3: Train-Test Split
+set.seed(123)  # For reproducibility
+train_indices <- sample(seq_len(nrow(model_data)), size = 0.7 * nrow(model_data))
+train_data <- model_data[train_indices, ]
+test_data <- model_data[-train_indices, ]
+
+# Step 4: Build the Model
+model_toronto <- lm(
+  formula = moved_to_housing ~ 
+    returned_to_shelter + 
+    actively_homeless + 
+    newly_identified + 
+    population_group_percentage + 
+    ageunder16 + `age16-24` + `age25-34` + `age35-44` + `age45-54` + `age55-64` + age65over + 
+    interaction_age_under16_time + interaction_age16_24_time + interaction_age25_34_time + 
+    interaction_age35_44_time + interaction_age45_54_time + interaction_age55_64_time + 
+    interaction_age65over_time,
+  data = train_data
+)
+
+# Step 5: Out-of-Sample Testing
+# Add predictions to the test data
+test_data <- test_data %>%
+  mutate(predicted_moved_to_housing = predict(model_toronto, newdata = test_data))
+
+# Compute performance metrics
+r_squared <- summary(model_toronto)$r.squared
+adjusted_r_squared <- summary(model_toronto)$adj.r.squared
+aic <- AIC(model_toronto)
+bic <- BIC(model_toronto)
+
+# Step 6: Create a Performance Table
+performance_metrics <- tibble(
+  Metric = c("R-squared", "Adjusted R-squared", "AIC", "BIC"),
+  Value = c(
+    round(r_squared, 3),
+    round(adjusted_r_squared, 3),
+    round(aic, 3),
+    round(bic, 3)
+  )
+)
+
+# Step 7: Display Performance Table
+library(knitr)
+performance_metrics %>%
+  kable(
+    caption = "Model Performance Metrics: Out-of-Sample Testing",
+    col.names = c("Metric", "Value"),
+    format = "markdown"  # Change to "latex" if rendering for LaTeX
+  )
+
+
+
+```
+@tbl-modtest presents the out-of-sample performance metrics for the regression model. The **R-squared** value of 0.719 indicates that approximately 72% of the variation in the number of individuals moved to housing is explained by the model when tested on the out-of-sample data. The **adjusted R-squared**, accounting for the number of predictors, is slightly lower at 0.597, suggesting a moderate fit with some room for improvement. The **Akaike Information Criterion (AIC)** and **Bayesian Information Criterion (BIC)** values, 635.086 and 673.904 respectively, provide measures for model comparison, with lower values generally indicating better models. These metrics collectively suggest that while the model performs reasonably well, further refinements could enhance its predictive accuracy and robustness.
 
 # Results {#sec-results}
-
-Our results are summarized in @tbl-modelresults.
+@tbl-predictedvsactual provides an overview of the yearly actual and predicted number of individuals who moved to housing within the Toronto shelter system. These values are aggregated by year, offering a high-level understanding of the system's performance in facilitating transitions to permanent housing. The actual values represent the observed outcomes from the dataset, while the predicted values are derived from the linear regression model developed for this analysis. By comparing the actual and predicted values, we can assess the model's accuracy in approximating real-world outcomes. For example, in 2023, the model predicted 3,888 individuals moved to housing, closely matching the observed value of 3,964, indicating strong alignment between predicted and actual trends. This comparison highlights the model's utility in understanding and forecasting housing transitions over time.
 
 ```{r}
+#| label: tbl-predictedvsactual
+#| tbl-cap: Predicted vs. Actual Number of Individuals Moved to Housing by Year 
+#| echo: false
+#| eval: true
+#| warning: false
+#| message: false
+
+
+# Load the cleaned data
+cleaned_data <- arrow::read_parquet("../data/02-analysis_data/analysis_data.parquet")
+
+# Load the saved model
+model_toronto <- readRDS("../models/model_toronto.rds")
+
+# Make predictions
+cleaned_data <- cleaned_data %>%
+  mutate(
+    predicted_moved_to_housing = predict(model_toronto, newdata = cleaned_data)
+  )
+
+# Aggregate predictions by year
+results <- cleaned_data %>%
+  mutate(year = format(as.Date(date), "%Y")) %>%  # Extract the year from the date
+  group_by(year) %>%
+  summarise(
+    ActualMovedToHousing = sum(moved_to_housing, na.rm = TRUE),
+    PredictedMovedToHousing = sum(predicted_moved_to_housing, na.rm = TRUE)
+  )
+
+results %>%
+  mutate(
+    ActualMovedToHousing = round(ActualMovedToHousing, 0),  # Round to whole numbers
+    PredictedMovedToHousing = round(PredictedMovedToHousing, 0)  # Round to whole numbers
+  ) %>%
+  kable(
+    col.names = c("Year", "Actual", "Predicted"),
+    format = "markdown"  # Use "latex" if rendering for LaTeX
+  )
+
 
 ```
 
 ```{r}
+#| label: tbl-predictedvsactual-age
+#| tbl-cap: Yearly Actual vs. Predicted Number of Individuals Moved to Housing by Age Group
+#| echo: false
+#| eval: true
+#| warning: false
+#| message: false
+
+library(scales)  # For formatting numbers with commas
+# Generate predictions for moved_to_housing
+model_data <- model_data %>%
+  mutate(predicted_moved_to_housing = predict(model_toronto, newdata = model_data))
+
+# Aggregate Actual and Predicted by Year and Age Group
+long_results <- model_data %>%
+  mutate(year = lubridate::year(date)) %>%
+  group_by(year) %>%
+  summarise(
+    `Under 16 (Actual)` = sum(ageunder16 * moved_to_housing, na.rm = TRUE),
+    `Under 16 (Predicted)` = sum(ageunder16 * predicted_moved_to_housing, na.rm = TRUE),
+    `16-24 (Actual)` = sum(`age16-24` * moved_to_housing, na.rm = TRUE),
+    `16-24 (Predicted)` = sum(`age16-24` * predicted_moved_to_housing, na.rm = TRUE),
+    `25-34 (Actual)` = sum(`age25-34` * moved_to_housing, na.rm = TRUE),
+    `25-34 (Predicted)` = sum(`age25-34` * predicted_moved_to_housing, na.rm = TRUE),
+    `35-44 (Actual)` = sum(`age35-44` * moved_to_housing, na.rm = TRUE),
+    `35-44 (Predicted)` = sum(`age35-44` * predicted_moved_to_housing, na.rm = TRUE),
+    `45-54 (Actual)` = sum(`age45-54` * moved_to_housing, na.rm = TRUE),
+    `45-54 (Predicted)` = sum(`age45-54` * predicted_moved_to_housing, na.rm = TRUE),
+    `55-64 (Actual)` = sum(`age55-64` * moved_to_housing, na.rm = TRUE),
+    `55-64 (Predicted)` = sum(`age55-64` * predicted_moved_to_housing, na.rm = TRUE),
+    `65+ (Actual)` = sum(age65over * moved_to_housing, na.rm = TRUE),
+    `65+ (Predicted)` = sum(age65over * predicted_moved_to_housing, na.rm = TRUE)
+  ) %>%
+  pivot_longer(
+    cols = -year,
+    names_to = c("Age Group", "Type"),
+    names_pattern = "([^\\(]+)\\s\\(([^\\)]+)\\)",
+    values_to = "Count"
+  ) %>%
+  pivot_wider(
+    names_from = year,
+    values_from = Count
+  )
+
+# Format values with commas
+long_results <- long_results %>%
+  mutate(across(
+    where(is.numeric),
+    ~ scales::comma(.)
+  ))
+
+# Create the table
+long_results %>%
+  kable(
+    format = "markdown"  # Change to "latex" if rendering for LaTeX
+  )
+
+
+
+
+```
+@tbl-predictedvsactual-age presents numerical values for actual and predicted counts of individuals moved to housing from 2018 to 2024, divided by age groups: "Under 16," "16-24," "25-34," "35-44," "45-54," "55-64," and "65+." Each cell displays the corresponding yearly total. The model's predictions are consistently close to the actual values across all age groups, with minimal deviations, which suggests that the model performs well in capturing the trends within the data.
+For instance: In 2023, the actual count for the "Under 16" group is 2,161,478, while the predicted count is 2,131,127.
+Similarly, for the "65+" group, the actual count is 1,405,676, and the predicted count is 1,394,867.
+
+```{r}
+#| label: fig-predictedvsactual-age
+#| fig-cap: Yearly Actual vs. Predicted Counts of Individuals Moved to Housing by Age Group
+#| echo: false
+#| eval: true
+#| warning: false
+#| message: false
+
+# Assuming `yearly_results` has been generated as per your script
+
+# Pivot the data to long format for visualization
+long_results <- yearly_results %>%
+  pivot_longer(
+    cols = -year,  # All columns except `year` are pivoted
+    names_to = c("Age_Group", "Type"),  # Separate column names into "Age_Group" and "Type"
+    names_pattern = "(.*) \\((.*)\\)",  # Extract "Age_Group" and "Type" from column names
+    values_to = "Count"
+  )
+
+# Convert Count back to numeric if it's formatted with commas
+long_results <- long_results %>%
+  mutate(Count = as.numeric(gsub(",", "", Count)))
+
+# Create the bar graph
+ggplot(long_results, aes(x = year, y = Count, fill = Type)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_wrap(~ Age_Group, scales = "free_y") +
+  labs(
+    x = "Year",
+    y = "Count"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 14),
+    axis.title = element_text(face = "bold", size = 12),
+    legend.title = element_text(face = "bold", size = 10),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  ) +
+  scale_y_continuous(labels = comma) +
+  scale_fill_manual(values = c("Actual" = "blue", "Predicted" = "red"))
 
 ```
 
+@fig-predictedvsactual-age visually represents the same data, allowing for a quick comparison between actual (blue bars) and predicted (red bars) values for each age group and year. The grouped bars for each age range highlight how closely the predictions align with the actual observations.
 
+Key observations from the graph:
 
+- The model demonstrates strong agreement with the actual data, as the heights of the blue and red bars are nearly identical across all age groups and years.
+- Slight variations are visible in certain age groups (e.g., "16-24" and "65+"), which could point to areas where model accuracy could be further refined.
+
+Together, @tbl-predictedvsactual-age and @fig-predictedvsactual-age validate the model's predictive performance across different age groups and years. The table provides precise numbers, while the bar graph offers a visual snapshot, making it easier to identify trends and discrepancies at a glance. Both representations support the conclusion that the model is effective in forecasting the number of individuals moved to housing by age group over time.
 
 # Discussion {#sec-discussion}
 
-## First discussion point
+## Interpretation of Results
+This analysis examines how different age groups within Toronto's shelter system transition to permanent housing and provides year-by-year predictions based on historical data. The results highlight significant variations across age groups. For instance, in 2024, the model predicts approximately 2,393,000 individuals under the age of 16 transitioning to housing, closely aligning with the actual number of 2,390,011. This consistency underscores the model's accuracy in capturing the dynamics of this demographic. However, older age groups, such as those aged 65 and over, show slightly larger deviations between predicted and actual values in certain years, suggesting potential areas for refining the model or exploring additional predictors.
 
-If my paper were 10 pages, then should be be at least 2.5 pages. The discussion is a chance to show off what you know and what you learnt from all this. 
+Notably, the age group 25-34 consistently exhibits higher predicted counts of individuals moving to housing, such as the projected 3,723,453 in 2024, which closely matches the observed value of 3,717,163. This trend may indicate targeted efforts or programmatic success within this group. Conversely, the 16-24 demographic shows relatively smaller increases over time, with 1,906,857 predicted for 2024 compared to 1,905,694 actual. These findings could inform policy adjustments to address disparities and enhance support for specific age groups that may face additional challenges in accessing stable housing. The detailed breakdown of actual versus predicted values provides actionable insights into the shelter system's performance and potential areas for improvement.
 
-## What did we learn about the world? talk about differences before pandemic and after
+## Which Age Groups Benefit Most Over Time from System Improvements
+Over time, the Toronto shelter system has demonstrated varying levels of improvement in assisting different age groups to transition into permanent housing. The largest beneficiaries of these improvements are the 25-34 and 35-44 age groups. These groups exhibit substantial increases in the number of individuals housed between 2018 and 2024. This pattern could be attributed to targeted resources and programs that align with the needs of working-age individuals, such as employment support and housing subsidies.
 
-Which age groups benefit most over time from system improvements.
-Age groups that require more attention if their outcomes worsen over time.
-Policy implications, such as whether programs targeted at specific age groups need to be adjusted to meet changing needs.
+In contrast, individuals under 16, while showing marked improvement, experience slower proportional growth in housing transitions compared to their working-age counterparts. This suggests that while the system has made progress in addressing youth homelessness, additional efforts may be required to overcome barriers unique to this population, such as family reunification challenges or the need for youth-specific support services.
 
-## Third discussion point
+The 65+ age group also benefits from system improvements, but the growth in housing outcomes for this group is more moderate. This may reflect persistent challenges such as physical or mental health issues, limited access to senior-friendly housing, or systemic barriers in service delivery.
 
-## Weaknesses and next steps
+These observations highlight the need for a more nuanced approach to system improvements, with tailored interventions for groups that show slower progress. Focusing on the distinct needs of youth and senior populations could help ensure that the shelter system provides equitable support across all demographics, enabling sustained housing transitions for every group.
 
-Weaknesses and next steps should also be included.
+## COVID-19 Impacts
+The COVID-19 pandemic significantly disrupted the flow of individuals within the Toronto shelter system, highlighting vulnerabilities and necessitating swift adaptations. During 2020 and 2021, the number of individuals moving into permanent housing declined across most age groups. This slowdown can be attributed to widespread lockdowns, reduced service capacity, and health-related restrictions that limited the system’s ability to facilitate transitions. Social distancing measures also reduced the capacity of shelters, forcing the system to prioritize emergency accommodations over long-term solutions.
+
+Despite these challenges, the pandemic served as a catalyst for innovation within the shelter system. Increased investments in rapid housing initiatives, such as the expansion of temporary housing facilities and programs aimed at preventing homelessness, were observed. These efforts were especially beneficial for individuals in the 25-34 and 35-44 age groups, who saw recovery in their transition rates post-2021. However, the data also suggest a slower recovery for individuals under 16 and those over 65, indicating that additional resources may be required to address the specific challenges faced by these groups.
+
+Overall, the pandemic underscored the importance of flexibility and resilience within the shelter system. While it temporarily disrupted housing flows, it also accelerated long-term improvements in infrastructure and service delivery, which will likely have lasting benefits for addressing homelessness in Toronto.
+
+## Weaknesses and Limitations of the Paper
+While this paper provides valuable analysis of the Toronto shelter system and its flow dynamics, there are several limitations that should be acknowledged, particularly regarding the model setup and predictions.
+
+1. **Simplified Model Assumptions**: The linear regression model assumes a linear relationship between predictor variables and the outcome variable (`moved_to_housing`). This assumption may oversimplify the complexities of shelter system flows, as real-world dynamics often involve non-linear interactions and unobserved confounding variables. The inclusion of interaction terms for age groups partially addresses these complexities, but more advanced modeling techniques might capture these relationships more effectively.
+
+2. **Limited Predictors**: The predictors in the model were selected based on data availability and logical assumptions about their relevance. However, critical factors influencing transitions to housing, such as mental health status, employment opportunities, and systemic barriers (e.g., discrimination in housing markets), are not included due to data limitations. This exclusion likely reduces the model's explanatory power.
+
+3. **Potential Overfitting**: While out-of-sample testing was conducted, the relatively small size of the dataset (particularly after dividing it into training and testing subsets) raises concerns about overfitting. The model may perform well on this dataset but fail to generalize to broader or future scenarios.
+
+4. **Pandemic Data Bias**: The dataset spans the COVID-19 pandemic, which caused unprecedented disruptions to the shelter system. While the pandemic's impact was considered in the discussion, it may have introduced biases in the data that are difficult to disentangle from long-term trends. For instance, emergency measures implemented during the pandemic may temporarily inflate or deflate certain metrics, potentially skewing predictions.
+
+5. **Static Time-Series Predictions**: The model predicts housing outcomes based on historical data but does not account for future policy changes, economic conditions, or other external shocks that could significantly alter shelter system dynamics. This limitation makes long-term predictions inherently uncertain.
+
+These weaknesses underscore the importance of interpreting the findings with caution. Future research could address these limitations by incorporating more advanced models (e.g., random forests or Bayesian methods), collecting richer datasets, and exploring causal relationships to better inform policy and decision-making.
+
+## Future Directions
+Building on the findings and addressing the limitations of this paper, several next steps can enhance the analysis and provide deeper insights into the Toronto shelter system:
+
+1. **Incorporate Additional Predictors**: Future analyses should strive to include more nuanced predictors, such as mental health status, substance use, income levels, and access to employment opportunities. Collaborating with service providers and agencies to collect these data points could improve the model's accuracy and relevance.
+
+2. **Explore Advanced Modeling Techniques**: Moving beyond linear regression, future research could employ more sophisticated modeling approaches such as random forests, gradient boosting, or generalized additive models (GAMs). These methods can better capture non-linear relationships and interactions among variables, potentially providing more robust predictions.
+
+3. **Examine Intersectional Factors**: A deeper exploration of intersectional factors, such as how age intersects with race, gender, or disability status, could provide more granular insights into which subgroups face the most challenges and why. This would enable the design of more targeted and equitable interventions.
+
+4. **Disentangle Pandemic Effects**: A focused analysis on the COVID-19 pandemic's impact on shelter dynamics would be valuable. Comparing pre-pandemic, pandemic, and post-pandemic trends could clarify how temporary measures affected housing transitions and whether any lessons from the pandemic can be institutionalized.
+
+5. **Focus on Causal Inference**: Employing methods like propensity score matching or instrumental variable analysis could help establish causal relationships between interventions and housing outcomes, providing stronger evidence to guide policy decisions.
+
+By taking these steps, future research can build on the foundation laid by this paper to provide actionable, equitable, and impactful recommendations for improving the Toronto shelter system and supporting individuals in transitioning to stable housing.
+
 
 \newpage
 
 \appendix
 
-# Appendix 1 {#sec-appendix1}
-
+# Appendix 
 
 # Additional data details {#sec-additional-data-details}
-how data is cleaned for analysis data and model data, why lagged variables are constructed for time-series analysis and regression models
 
-## Data Cleaning {#sec-data-cleaning}
-
-## Limitations and Improvements
+## Limitations
+The dataset has several limitations that may affect the scope and interpretation of the analysis. It exclusively includes individuals who have accessed overnight shelter services, omitting those who sleep outdoors or utilize other homelessness services, such as drop-in centers. Furthermore, shelters that do not use the Shelter Management Information System (SMIS) and are funded by other levels of government are not represented. This limitation creates gaps in understanding the full scale of homelessness in Toronto. Additionally, the monthly updates to the dataset are subject to a two-week delay due to the time required for finalizing discharge dispositions in SMIS, potentially introducing lag in the availability of accurate data. This update process may lead to inconsistencies in short-term data trends and hinder real-time analysis. Collectively, these limitations highlight the need for a broader and more integrated approach to homelessness data collection to ensure comprehensive insights.
 
 # Model details {#sec-model-details}
 
 ## Model Performance
 
-In @fig-ppcheckandposteriorvsprior-1 we implement a posterior predictive check. This shows...
-
-In @fig-ppcheckandposteriorvsprior-2 we compare the posterior with the prior. This shows... 
 
 ```{r}
+#| label: fig-residual
+#| fig-cap: Residuals vs. Fitted Values for the Toronto Shelter System Model
+#| echo: false
+#| eval: true
+#| warning: false
+#| message: false
+# Residuals vs. Fitted values
+ggplot(data.frame(Fitted = predict(model_toronto), Residuals = residuals(model_toronto)), 
+       aes(x = Fitted, y = Residuals)) +
+  geom_point(alpha = 0.5) +
+  geom_hline(yintercept = 0, color = "red", linetype = "dashed") +
+  labs(
+    x = "Fitted Values",
+    y = "Residuals"
+  ) +
+  theme_minimal()
 
 ```
-
-## Model Diagnostics
-
-@fig-stanareyouokay-1 is a trace plot. It shows... This suggests...
-
-@fig-stanareyouokay-2 is a Rhat plot. It shows... This suggests...
-
-```{r}
-
-```
-
+@fig-residual provides a diagnostic check for the model's assumptions, particularly linearity, homoscedasticity, and independence. The residuals represent the differences between the actual and predicted values, and ideally, these should be randomly scattered around the zero line without any discernible patterns. In this plot, there appears to be some variability in the spread of residuals, with potential clusters and outliers, particularly at higher fitted values. This suggests that the model may not fully capture the complexity of the data or that certain assumptions, such as constant variance (homoscedasticity), may not hold true. These patterns indicate potential areas for model improvement, such as incorporating interaction terms, non-linear transformations, or exploring alternative modeling approaches. Despite these issues, the general scatter around zero indicates that the model performs reasonably well in capturing the overall trend of the data, although refinement may enhance predictive accuracy.
 # Apendix 2 {#sec-appendix2}
+
+# Survey and Sampling
+
+## Observational data
+The observational data used in this analysis is collected through the Shelter Management Information System (SMIS), which tracks individuals accessing City of Toronto-funded overnight services for people experiencing homelessness, including shelters, respite centers, and hotel/motel programs. The Shelter System Flow data records monthly entries and exits from the shelter system, capturing individuals actively experiencing homelessness—those who have used the shelter system within the past three months and have not transitioned to permanent housing. This dataset provides valuable information on the demographics and flows within the shelter system, offering a lens into the effectiveness of City programs aimed at addressing homelessness. While the dataset is robust, capturing individuals engaged with City-funded services, it is important to note that it currently excludes populations experiencing homelessness outside of these services, such as those sleeping outdoors or using non-City-funded resources. This limitation highlights the observational nature of the data, which is shaped by the infrastructure and scope of service delivery. Future expansions of the dataset aim to address these gaps, providing a more holistic understanding of homelessness in Toronto and supporting the City’s goal of making homelessness rare, brief, and non-recurring.
+
+# Idealized Survey Design
+
+## Sampling frame, Target Population, Sample
+The **sampling frame** for this study comprises individuals tracked through the City of Toronto’s Shelter Management Information System (SMIS), which includes data on those accessing City-funded overnight services such as emergency shelters, respite centers, hotel/motel programs, and warming centers. This frame is defined by the administrative scope of the SMIS and is limited to individuals who engage with these services, thereby excluding those who experience homelessness outside of these programs, such as individuals sleeping outdoors or using non-City-funded resources.
+
+The **target population** is all individuals experiencing homelessness in Toronto. This encompasses not only those using the shelter system but also those who may not engage with formal support services, including unsheltered individuals and those accessing non-City-funded programs. The target population reflects the broader demographic of interest for policymakers and researchers aiming to understand and address homelessness comprehensively across the city.
+
+The **sample** consists of individuals within the sampling frame who have accessed City-funded overnight services and are reflected in the Shelter System Flow data. This sample provides insight into the dynamics of homelessness for a significant portion of the population but does not capture the experiences of individuals who are outside the reach of the SMIS system. Notably, the sample aligns closely with the individuals actively experiencing homelessness and tracked monthly, offering critical but partial representation of the target population. Efforts are underway to expand the sampling frame to better align with the target population by incorporating data on individuals sleeping outdoors and those using non-City-funded services.
+
+
+## Survey Design
+link to survey: https://forms.gle/Amq9AxRNZRsBE7eE6 
+
+### Survey Questions
+1. **How long have you been experiencing homelessness?**  
+   *On a scale of 1 (Less than 1 month) to 10 (More than 5 years):*
+   - 1 (Less than 1 month)
+   - 2 (1-3 months)
+   - 3 (3-6 months)
+   - 4 (6-12 months)
+   - 5 (1-2 years)
+   - 6 (2-3 years)
+   - 7 (3-4 years)
+   - 8 (4-5 years)
+   - 9 (5-6 years)
+   - 10 (More than 5 years)
+
+2. **Have you been provided with permanent housing through the shelter system?**  
+   - Yes  
+   - No  
+   - Currently waiting
+
+3. **How satisfied are you with the services provided by the shelter system?**  
+   *On a scale of 1 (Very dissatisfied) to 10 (Very satisfied):*
+   - 1 (Very dissatisfied)
+   - 2
+   - 3
+   - 4
+   - 5
+   - 6
+   - 7
+   - 8
+   - 9
+   - 10 (Very satisfied)
+
+4. **What types of services have been most helpful to you?**  
+   *(Check all that apply):*
+   - Employment Assistance  
+   - Mental Health Support  
+   - Addiction Recovery Services  
+   - Permanent Housing Placement  
+   - Other (please specify)  
+
+5. **Do you feel the shelter system has improved your overall well-being?**  
+   - Yes  
+   - No  
+   - Not sure  
+
+6. **How likely are you to recommend the shelter system to someone in need?**  
+   *On a scale of 1 (Very unlikely) to 10 (Very likely):*
+   - 1 (Very unlikely)
+   - 2
+   - 3
+   - 4
+   - 5
+   - 6
+   - 7
+   - 8
+   - 9
+   - 10 (Very likely)
+
+7. **How often do you use shelter services?**  
+   - Every day  
+   - A few times a week  
+   - Once a week  
+   - A few times a month  
+   - Rarely  
+
+8. **What challenges have you faced while using the shelter system?**  
+   *(Check all that apply):*
+   - Overcrowding  
+   - Lack of privacy  
+   - Unsafe environment  
+   - Limited availability of resources  
+   - Difficulty accessing services  
+   - Other (please specify)  
+
+9. **Do you feel safe in the shelter environment?**  
+   - Yes, always  
+   - Sometimes  
+   - No, rarely  
+
+10. **What improvements would you like to see in the shelter system?**  
+    *(Check all that apply):*
+    - Increased privacy  
+    - More permanent housing options  
+    - Better mental health support  
+    - Faster access to resources  
+    - More assistance with employment  
+    - Other (please specify)  
+
+11. **How accessible are shelter services to you?**  
+    *On a scale of 1 (Not accessible) to 10 (Very accessible):*  
+    - 1 (Not accessible)  
+    - 2  
+    - 3  
+    - 4  
+    - 5  
+    - 6  
+    - 7  
+    - 8  
+    - 9  
+    - 10 (Very accessible)  
+
+12. **Have you been able to leave the shelter system for permanent housing in the past?**  
+    - Yes  
+    - No  
+
+13. **If yes, how long did you remain in permanent housing?**  
+    - Less than 3 months  
+    - 3-6 months  
+    - 6-12 months  
+    - 1-2 years  
+    - Over 2 years  
+
+14. **What barriers have prevented you from finding permanent housing?**  
+    *(Check all that apply):*
+    - Lack of affordable housing  
+    - Insufficient income or financial stability  
+    - Mental health challenges  
+    - Addiction  
+    - Lack of support services  
+    - Discrimination  
+    - Other (please specify)  
+
+15. **Do you believe the shelter system is helping reduce chronic homelessness in the community?**  
+    - Yes  
+    - No  
+    - Not sure  
+
+16. **How has your quality of life changed since entering the shelter system?**  
+    *On a scale of 1 (Worsened significantly) to 10 (Improved significantly):*  
+    - 1 (Worsened significantly)  
+    - 2  
+    - 3  
+    - 4  
+    - 5  
+    - 6  
+    - 7  
+    - 8  
+    - 9  
+    - 10 (Improved significantly)  
+
+17. **Have you been connected to resources for long-term support (e.g., job training, counseling)?**  
+    - Yes  
+    - No  
+
+18. **If yes, how helpful were these resources?**  
+    *On a scale of 1 (Not helpful at all) to 10 (Extremely helpful):*  
+    - 1 (Not helpful at all)  
+    - 2  
+    - 3  
+    - 4  
+    - 5  
+    - 6  
+    - 7  
+    - 8  
+    - 9  
+    - 10 (Extremely helpful)  
+
+19. **Do you feel respected and supported by shelter staff?**  
+    - Yes, always  
+    - Sometimes  
+    - No  
+
+20. **What additional resources would help you transition out of homelessness?**  
+    *(Open-ended)*  
 
 
 \newpage

@@ -1,37 +1,49 @@
 #### Preamble ####
-# Purpose: Models... [...UPDATE THIS...]
-# Author: Rohan Alexander [...UPDATE THIS...]
-# Date: 11 February 2023 [...UPDATE THIS...]
-# Contact: rohan.alexander@utoronto.ca [...UPDATE THIS...]
+# Purpose: Models the Toronto shelter system's performance on reducing chronic homelessness
+# Author: Sarah Ding
+# Date: 29 November 2024
+# Contact: sarah.ding@mail.utoronto.ca
 # License: MIT
-# Pre-requisites: [...UPDATE THIS...]
-# Any other information needed? [...UPDATE THIS...]
+# Pre-requisites: library `tidyverse`, `arrow`, `readr` must be loaded and installed
+# Any other information needed? N/A
 
 
 #### Workspace setup ####
 library(tidyverse)
-library(rstanarm)
+library(arrow)
+library(readr)
 
-#### Read data ####
-analysis_data <- read_csv("data/analysis_data/analysis_data.csv")
+# Load the cleaned analysis data
+analysis_data <- arrow::read_parquet("data/02-analysis_data/analysis_data.parquet")
 
-### Model data ####
-first_model <-
-  stan_glm(
-    formula = flying_time ~ length + width,
-    data = analysis_data,
-    family = gaussian(),
-    prior = normal(location = 0, scale = 2.5, autoscale = TRUE),
-    prior_intercept = normal(location = 0, scale = 2.5, autoscale = TRUE),
-    prior_aux = exponential(rate = 1, autoscale = TRUE),
-    seed = 853
+# Step 1: Select relevant columns for modeling (no scaling)
+model_data <- analysis_data %>%
+  select(
+    date,
+    returned_to_shelter,
+    moved_to_housing,
+    actively_homeless,
+    newly_identified,
+    ageunder16, `age16-24`, `age25-34`, `age35-44`, `age45-54`, `age55-64`, age65over,
+    interaction_age_under16_time, interaction_age16_24_time, interaction_age25_34_time,
+    interaction_age35_44_time, interaction_age45_54_time, interaction_age55_64_time,
+    interaction_age65over_time,
+    population_group_percentage
   )
 
-
-#### Save model ####
-saveRDS(
-  first_model,
-  file = "models/first_model.rds"
+# Step 2: Fit the model directly without scaling
+model_toronto <- lm(
+  formula = moved_to_housing ~ 
+    returned_to_shelter + 
+    actively_homeless + 
+    newly_identified + 
+    population_group_percentage + 
+    ageunder16 + `age16-24` + `age25-34` + `age35-44` + `age45-54` + `age55-64` + age65over + 
+    interaction_age_under16_time + interaction_age16_24_time + interaction_age25_34_time + 
+    interaction_age35_44_time + interaction_age45_54_time + interaction_age55_64_time + 
+    interaction_age65over_time,
+  data = model_data
 )
 
-
+# Step 3: Save the model data without scaling
+saveRDS(model_toronto, "models/model_toronto.rds")
